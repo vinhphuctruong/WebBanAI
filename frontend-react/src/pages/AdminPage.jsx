@@ -35,7 +35,6 @@ const initialProductForm = {
   imageUrl: "",
   tutorialUrl: "",
   tutorialVideo: "",
-  accountInfo: "",
   stock: "",
   features: "",
   productType: "chatbot_prompt",
@@ -71,7 +70,6 @@ function toolToForm(tool) {
     description: tool.description || "",
     imageUrl: tool.logo || "",
     tutorialUrl: tool.tutorialUrl || "",
-    accountInfo: tool.accountInfo || "",
     stock: String(tool.availableCount ?? ""),
     features: Array.isArray(tool.features) ? tool.features.join(", ") : "",
     productType: "chatbot_prompt"
@@ -232,7 +230,6 @@ export default function AdminPage() {
           description: String(productForm.description || ""),
           logo: String(productForm.imageUrl || ""),
           tutorialUrl: String(productForm.tutorialUrl || ""),
-          accountInfo: String(productForm.accountInfo || ""),
           features
         };
 
@@ -437,18 +434,6 @@ export default function AdminPage() {
             </>
           )}
 
-          {!isGem && (
-            <label className="admin-span-all">
-              Thông tin tài khoản (Chỉ người mua mới thấy)
-              <textarea
-                rows="4"
-                value={productForm.accountInfo}
-                onChange={(event) => updateProductField("accountInfo", event.target.value)}
-                placeholder="Tên đăng nhập: demo@gmail.com&#10;Mật khẩu: 123456"
-              />
-            </label>
-          )}
-
           <label className="admin-span-all">
             Ảnh đại diện URL
             <input
@@ -560,10 +545,24 @@ export default function AdminPage() {
         <h2>Đơn hàng</h2>
         <div className="table-wrap">
           <table className="table">
-            <thead><tr><th>Sản phẩm</th><th>Email</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
+            <thead><tr><th>Sản phẩm</th><th>Email đặt</th><th>Thông tin liên hệ (AI Tool)</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
             <tbody>
               {orders.map((o) => (
-                <tr key={o.id}><td>{o.title}</td><td>{o.email}</td><td>{money(o.amount)}</td><td>{o.status}</td></tr>
+                <tr key={o.id}>
+                  <td>{o.title}</td>
+                  <td>{o.email}</td>
+                  <td>
+                    {o.item_type === 'ai_tool' ? (
+                      <div style={{ fontSize: '0.85rem' }}>
+                        <div><strong>{o.customer_name || '-'}</strong></div>
+                        <div>{o.customer_phone || '-'}</div>
+                        <div>{o.customer_email || '-'}</div>
+                      </div>
+                    ) : '-'}
+                  </td>
+                  <td>{money(o.amount)}</td>
+                  <td>{o.status}</td>
+                </tr>
               ))}
             </tbody>
           </table>

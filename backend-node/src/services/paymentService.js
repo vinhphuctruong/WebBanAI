@@ -15,7 +15,7 @@ async function loadProduct(type, slug) {
   return null;
 }
 
-export async function createPayment({ userId, itemType, slug, quantity = 1 }) {
+export async function createPayment({ userId, itemType, slug, quantity = 1, customerName = null, customerPhone = null, customerEmail = null }) {
   const normalizedType = itemType === "ai" ? "ai_tool" : itemType;
   const product = await loadProduct(normalizedType, slug);
   if (!product) {
@@ -37,9 +37,9 @@ export async function createPayment({ userId, itemType, slug, quantity = 1 }) {
 
   await withTransaction(async (client) => {
     await client.query(
-      `INSERT INTO orders (id, user_id, item_type, item_slug, title, amount, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
-      [orderId, userId, normalizedType, slug, product.title || product.name, amount]
+      `INSERT INTO orders (id, user_id, item_type, item_slug, title, amount, status, customer_name, customer_phone, customer_email)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, $8, $9)`,
+      [orderId, userId, normalizedType, slug, product.title || product.name, amount, customerName, customerPhone, customerEmail]
     );
 
     await client.query(
@@ -55,7 +55,8 @@ export async function createPayment({ userId, itemType, slug, quantity = 1 }) {
 export async function getPaymentById(paymentId, requesterUserId, allowStaff = false) {
   const result = await query(
     `SELECT p.id, p.order_id, p.user_id, p.provider, p.status, p.payment_code, p.payment_url, p.instruction,
-            p.created_at, o.amount, o.currency, o.item_type, o.item_slug, o.title, u.full_name
+            p.created_at, o.amount, o.currency, o.item_type, o.item_slug, o.title, u.full_name,
+            o.customer_name, o.customer_phone, o.customer_email
      FROM payments p
      JOIN orders o ON o.id = p.order_id
      JOIN users u ON u.id = p.user_id
@@ -85,9 +86,11 @@ export async function getPaymentById(paymentId, requesterUserId, allowStaff = fa
       telegramLink: env.payment.telegramLink,
       salesPhone: env.payment.salesPhone,
       itemType: row.item_type,
-      itemSlug: row.item_slug,
       title: row.title,
       customerName: row.full_name,
+      contactName: row.customer_name,
+      contactPhone: row.customer_phone,
+      contactEmail: row.customer_email,
       createdAt: row.created_at
     }
   };
@@ -95,7 +98,8 @@ export async function getPaymentById(paymentId, requesterUserId, allowStaff = fa
 
 export async function listOrders() {
   const result = await query(
-    `SELECT o.id, o.user_id, o.item_type, o.item_slug, o.title, o.amount, o.currency, o.status, o.created_at, u.email
+    `SELECT o.id, o.user_id, o.item_type, o.item_slug, o.title, o.amount, o.currency, o.status, o.created_at, u.email,
+            o.customer_name, o.customer_phone, o.customer_email
      FROM orders o
      JOIN users u ON u.id = o.user_id
      ORDER BY o.created_at DESC`

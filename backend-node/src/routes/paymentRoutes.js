@@ -8,7 +8,7 @@ router.use(requireAuth);
 
 router.post("/create", async (req, res) => {
   try {
-    const { itemType, slug, quantity } = req.body || {};
+    const { itemType, slug, quantity, customerName, customerPhone, customerEmail } = req.body || {};
     if (!itemType || !slug) {
       return res.status(400).json({ message: "Thieu thong tin thanh toan" });
     }
@@ -17,7 +17,10 @@ router.post("/create", async (req, res) => {
       userId: req.user.sub,
       itemType: String(itemType),
       slug: String(slug),
-      quantity: Number(quantity || 1)
+      quantity: Number(quantity || 1),
+      customerName,
+      customerPhone,
+      customerEmail
     });
     return res.json(data);
   } catch (err) {

@@ -69,51 +69,9 @@ export default function ToolDetailPage() {
             </div>
           )}
 
-          {purchasedInfo?.accountInfo ? (
-            <div style={{ marginTop: "2rem", padding: "1.5rem", background: "var(--surface-soft)", borderRadius: "12px", border: "1px solid var(--brand)", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                <h3 style={{ color: "var(--brand)", margin: 0 }}>Thông tin tài khoản của bạn</h3>
-                <button 
-                  className="btn btn-soft" 
-                  style={{ padding: "4px 12px", fontSize: "0.9rem" }}
-                  onClick={() => setShowAccount(!showAccount)}
-                >
-                  {showAccount ? "Ẩn bớt" : "Hiện tài khoản"}
-                </button>
-              </div>
-              
-              {showAccount ? (
-                <>
-                  <pre style={{ whiteSpace: "pre-wrap", background: "var(--surface)", color: "var(--ink)", padding: "1rem", borderRadius: "8px", border: "1px solid var(--line)", fontSize: "1.05rem", fontWeight: "600" }}>
-                    {purchasedInfo.accountInfo}
-                  </pre>
-                  <button 
-                    className="btn btn-primary" 
-                    style={{ marginTop: "1rem", width: "100%" }}
-                    onClick={() => {
-                      navigator.clipboard.writeText(purchasedInfo.accountInfo);
-                      alert("Đã copy thông tin tài khoản!");
-                    }}
-                  >
-                    Copy thông tin
-                  </button>
-                </>
-              ) : (
-                <div style={{ padding: "1.5rem", textAlign: "center", background: "var(--surface)", borderRadius: "8px", border: "1px dashed var(--line)", color: "var(--ink-soft)" }}>
-                  <p style={{ margin: 0 }}>Thông tin tài khoản đang bị ẩn để bảo mật.</p>
-                  <button 
-                    className="btn btn-soft" 
-                    style={{ marginTop: "0.5rem" }}
-                    onClick={() => setShowAccount(true)}
-                  >
-                    Bấm để hiển thị
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : Number(tool.accountPrice || 0) > 0 && (
-            <div style={{ marginTop: "2rem", padding: "1.2rem", background: "rgba(255, 193, 7, 0.1)", color: "#b8860b", borderRadius: "12px", border: "1px dashed #b8860b", textAlign: "center" }}>
-              <p>Bạn cần mua sản phẩm này để xem thông tin tài khoản đăng nhập.</p>
+          {Number(tool.accountPrice || 0) > 0 && (
+            <div style={{ marginTop: "2rem", padding: "1.2rem", background: "rgba(33, 150, 243, 0.1)", color: "var(--brand)", borderRadius: "12px", border: "1px dashed var(--brand)", textAlign: "center" }}>
+              <p>Sau khi thanh toán xong, Admin sẽ chủ động liên hệ qua Zalo/Email bạn đã cung cấp để bàn giao tài khoản.</p>
             </div>
           )}
         </div>

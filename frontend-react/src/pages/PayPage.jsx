@@ -14,6 +14,12 @@ export default function PayPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
+  const [contactForm, setContactForm] = useState({
+    name: user?.name || "",
+    phone: user?.phone || "",
+    email: user?.email || ""
+  });
+
   useEffect(() => {
     if (!user) return;
 
@@ -25,6 +31,8 @@ export default function PayPage() {
         if (res.exists) {
           setExistingPayment(res);
           setStep("prompt");
+        } else if (itemType === "ai") {
+          setStep("contact");
         } else {
           startNewPayment();
         }
@@ -36,10 +44,22 @@ export default function PayPage() {
   }, [user, itemType, slug]);
 
   function startNewPayment() {
+    if (itemType === "ai" && (!contactForm.name || !contactForm.phone || !contactForm.email)) {
+      setError("Vui lòng điền đầy đủ thông tin để Admin liên hệ giao tài khoản.");
+      return;
+    }
+
     setStep("creating");
     api("/payments/create", {
       method: "POST",
-      body: JSON.stringify({ itemType, slug, quantity: 1 })
+      body: JSON.stringify({ 
+        itemType, 
+        slug, 
+        quantity: 1,
+        customerName: contactForm.name,
+        customerPhone: contactForm.phone,
+        customerEmail: contactForm.email
+      })
     })
       .then((res) => {
         setPayment(res.payment);
@@ -95,6 +115,58 @@ export default function PayPage() {
             </button>
             <Link to="/" className="btn btn-ghost">
               Trở về trang chủ
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (step === "contact") {
+    return (
+      <section className="stack">
+        <div className="card" style={{ maxWidth: 500, margin: "2rem auto", padding: "2rem" }}>
+          <h2 style={{ marginBottom: "1rem", textAlign: "center" }}>Thông tin nhận tài khoản</h2>
+          <p style={{ marginBottom: "1.5rem", fontSize: "0.95rem", color: "var(--ink-soft)", textAlign: "center" }}>
+            Admin sẽ liên hệ với bạn qua các thông tin này để bàn giao tài khoản AI sau khi bạn thanh toán thành công.
+          </p>
+          
+          {error && <p className="error">{error}</p>}
+
+          <div className="form stack" style={{ gap: "1rem" }}>
+            <label>
+              Tên của bạn
+              <input 
+                type="text" 
+                value={contactForm.name} 
+                onChange={e => setContactForm({...contactForm, name: e.target.value})} 
+                placeholder="Nguyễn Văn A" 
+              />
+            </label>
+            <label>
+              Số điện thoại (Zalo)
+              <input 
+                type="text" 
+                value={contactForm.phone} 
+                onChange={e => setContactForm({...contactForm, phone: e.target.value})} 
+                placeholder="09xxx" 
+              />
+            </label>
+            <label>
+              Gmail nhận tài khoản
+              <input 
+                type="email" 
+                value={contactForm.email} 
+                onChange={e => setContactForm({...contactForm, email: e.target.value})} 
+                placeholder="example@gmail.com" 
+              />
+            </label>
+            
+            <button className="btn btn-primary" onClick={startNewPayment} style={{ marginTop: "1rem" }}>
+              Tiếp tục thanh toán
+            </button>
+            <Link to={`/ai-tool/${slug}`} className="btn btn-ghost" style={{ textAlign: "center" }}>
+              Hủy bỏ
             </Link>
           </div>
         </div>

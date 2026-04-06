@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS orders (
   amount INTEGER NOT NULL,
   currency VARCHAR(10) NOT NULL DEFAULT 'VND',
   status VARCHAR(20) NOT NULL DEFAULT 'pending',
+  customer_name VARCHAR(150),
+  customer_phone VARCHAR(30),
+  customer_email VARCHAR(190),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
