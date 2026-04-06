@@ -1,0 +1,116 @@
+name: CD VPS
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches:
+      - main
+      - master
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to deploy"
+        required: true
+        default: "main"
+
+concurrency:
+  group: cd-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy To VPS
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_PORT: ${{ secrets.VPS_PORT }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+      VPS_REPO_URL: ${{ secrets.VPS_REPO_URL }}
+      VPS_ENV_FILE: ${{ secrets.VPS_ENV_FILE }}
+      VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          test -n "$VPS_HOST" || (echo "Missing VPS_HOST secret" && exit 1)
+          test -n "$VPS_USER" || (echo "Missing VPS_USER secret" && exit 1)
+          test -n "$VPS_REPO_URL" || (echo "Missing VPS_REPO_URL secret" && exit 1)
+          test -n "$VPS_ENV_FILE" || (echo "Missing VPS_ENV_FILE secret" && exit 1)
+          test -n "${{ secrets.VPS_SSH_KEY }}" || (echo "Missing VPS_SSH_KEY secret" && exit 1)
+
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add known hosts
+        run: |
+          mkdir -p ~/.ssh
+          PORT="${VPS_PORT:-22}"
+          if [ -n "$VPS_SSH_KNOWN_HOSTS" ]; then
+            echo "$VPS_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "$PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
+          fi
+
+      - name: Deploy over SSH
+        run: |
+          PORT="${VPS_PORT:-22}"
+          APP_DIR="${VPS_APP_DIR:-/opt/tm-software-ai}"
+          BRANCH_INPUT="${{ github.event.inputs.branch }}"
+          ENV_B64="$(printf '%s' "$VPS_ENV_FILE" | base64 | tr -d '\n')"
+
+          if [ -n "$BRANCH_INPUT" ]; then
+            BRANCH="$BRANCH_INPUT"
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            BRANCH="${{ github.event.workflow_run.head_branch }}"
+          else
+            BRANCH="main"
+          fi
+
+          ssh -p "$PORT" "$VPS_USER@$VPS_HOST" "APP_DIR='$APP_DIR' BRANCH='$BRANCH' REPO_URL='$VPS_REPO_URL' ENV_B64='$ENV_B64' bash -s" <<'REMOTE_SCRIPT'
+          set -euo pipefail
+
+          APP_DIR="${APP_DIR:-/opt/tm-software-ai}"
+          BRANCH="${BRANCH:-main}"
+          REPO_URL="${REPO_URL:?missing repo url}"
+          ENV_B64="${ENV_B64:?missing env content}"
+
+          mkdir -p "$APP_DIR"
+
+          if [ ! -d "$APP_DIR/.git" ]; then
+            rm -rf "$APP_DIR"
+            git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
+          fi
+
+          cd "$APP_DIR"
+
+          git fetch --all --prune
+          git checkout -B "$BRANCH" "origin/$BRANCH"
+
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "Docker is not installed on VPS"
+            exit 1
+          fi
+
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "Docker Compose plugin is not installed on VPS"
+            exit 1
+          fi
+
+          printf '%s' "$ENV_B64" | base64 -d > .env.vps
+
+          docker compose -f docker-compose.vps.yml pull || true
+          docker compose -f docker-compose.vps.yml up -d --build
+          docker compose -f docker-compose.vps.yml ps
+          REMOTE_SCRIPT

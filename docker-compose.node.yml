@@ -1,0 +1,69 @@
+﻿services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: mlv_node
+      POSTGRES_USER: mlv
+      POSTGRES_PASSWORD: mlv123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_node_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlv -d mlv_node"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_node_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'db.adminCommand(\"ping\").ok' | mongosh --quiet --host localhost:27017 | grep 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend-node
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: mlv_node
+      POSTGRES_USER: mlv
+      POSTGRES_PASSWORD: mlv123
+      MONGO_URI: mongodb://mongo:27017/mlv_content
+      JWT_SECRET: change_this_secret_at_least_32_chars
+      JWT_EXPIRES: 7d
+      BANK_NAME: Vietcombank
+      BANK_ACCOUNT_NAME: CONG TY MAU LAM VIDEO
+      BANK_ACCOUNT_NUMBER: 1900000000000
+      BANK_BRANCH: TP.HCM
+      BANK_QR_IMAGE_URL: ""
+      SALES_ZALO_LINK: ""
+      SALES_TELEGRAM_LINK: ""
+      SALES_PHONE: ""
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend-react
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  pg_node_data:
+  mongo_node_data:
