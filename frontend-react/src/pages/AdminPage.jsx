@@ -35,6 +35,7 @@ const initialProductForm = {
   imageUrl: "",
   tutorialUrl: "",
   tutorialVideo: "",
+  accountInfo: "",
   stock: "",
   features: "",
   productType: "chatbot_prompt",
@@ -70,6 +71,7 @@ function toolToForm(tool) {
     description: tool.description || "",
     imageUrl: tool.logo || "",
     tutorialUrl: tool.tutorialUrl || "",
+    accountInfo: tool.accountInfo || "",
     stock: String(tool.availableCount ?? ""),
     features: Array.isArray(tool.features) ? tool.features.join(", ") : "",
     productType: "chatbot_prompt"
@@ -230,6 +232,7 @@ export default function AdminPage() {
           description: String(productForm.description || ""),
           logo: String(productForm.imageUrl || ""),
           tutorialUrl: String(productForm.tutorialUrl || ""),
+          accountInfo: String(productForm.accountInfo || ""),
           features
         };
 
@@ -432,6 +435,18 @@ export default function AdminPage() {
                 />
               </label>
             </>
+          )}
+
+          {!isGem && (
+            <label className="admin-span-all">
+              Thông tin tài khoản (Chỉ người mua mới thấy)
+              <textarea
+                rows="4"
+                value={productForm.accountInfo}
+                onChange={(event) => updateProductField("accountInfo", event.target.value)}
+                placeholder="Tên đăng nhập: demo@gmail.com&#10;Mật khẩu: 123456"
+              />
+            </label>
           )}
 
           <label className="admin-span-all">

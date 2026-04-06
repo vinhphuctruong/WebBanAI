@@ -3,6 +3,7 @@ import { requireAuth } from "../middlewares/auth.js";
 import { findUserById, updateUserPhone } from "../services/userService.js";
 import { query } from "../config/postgres.js";
 import { GemModel } from "../models/Gem.js";
+import { AiToolModel } from "../models/AiTool.js";
 
 const router = Router();
 
@@ -104,6 +105,33 @@ router.get("/purchases/gems/:slug", async (req, res) => {
     promptInstruction: gem.promptInstruction,
     promptContent: gem.promptContent
   });
+});
+
+router.get("/purchases/ai-tools/:slug", async (req, res) => {
+  const user = await findUserById(req.user.sub);
+  if (!user) {
+    return res.status(404).json({ message: "Khong tim thay user" });
+  }
+
+  const tool = await AiToolModel.findOne({ slug: req.params.slug }).lean();
+  if (!tool) {
+    return res.status(404).json({ message: "Khong tim thay tool" });
+  }
+
+  if (["admin", "staff", "sale"].includes(user.role)) {
+    return res.json({ accountInfo: tool.accountInfo });
+  }
+
+  const orderCheck = await query(
+    `SELECT 1 FROM orders WHERE user_id = $1 AND item_slug = $2 AND status = 'paid' LIMIT 1`,
+    [user.id, tool.slug]
+  );
+
+  if (orderCheck.rows.length === 0) {
+    return res.status(403).json({ message: "Ban chua so huu san pham nay" });
+  }
+
+  return res.json({ accountInfo: tool.accountInfo });
 });
 
 export default router;

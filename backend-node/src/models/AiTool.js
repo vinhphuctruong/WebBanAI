@@ -1,4 +1,4 @@
-﻿import mongoose from "mongoose";
+import mongoose from "mongoose";
 
 const aiToolSchema = new mongoose.Schema(
   {
@@ -14,6 +14,7 @@ const aiToolSchema = new mongoose.Schema(
     websiteUrl: String,
     tutorialUrl: String,
     logo: String,
+    accountInfo: String,
     linkedGemIds: [String]
   },
   { timestamps: true, collection: "ai_tools" }

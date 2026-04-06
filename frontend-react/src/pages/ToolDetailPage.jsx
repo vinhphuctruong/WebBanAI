@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, money } from "../lib/api.js";
+import { useAuth } from "../lib/auth.jsx";
 
 function getYouTubeId(url) {
   if (!url) return null;
@@ -10,12 +11,25 @@ function getYouTubeId(url) {
 
 export default function ToolDetailPage() {
   const { slug } = useParams();
+  const { user } = useAuth();
   const [tool, setTool] = useState(null);
+  const [purchasedInfo, setPurchasedInfo] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    api(`/catalog/ai-tools/${slug}`).then(setTool).catch((err) => setError(err.message));
-  }, [slug]);
+    api(`/catalog/ai-tools/${slug}`)
+      .then((res) => {
+        setTool(res);
+        if (Number(res.accountPrice || 0) === 0) {
+          setPurchasedInfo({ accountInfo: res.accountInfo });
+        } else if (user) {
+          api(`/profile/purchases/ai-tools/${slug}`)
+            .then((info) => setPurchasedInfo(info))
+            .catch(() => setPurchasedInfo(null));
+        }
+      })
+      .catch((err) => setError(err.message));
+  }, [slug, user]);
 
   if (error) return <p className="error">{error}</p>;
   if (!tool) return <p>Đang tải...</p>;
@@ -50,6 +64,29 @@ export default function ToolDetailPage() {
                   title="YouTube video player"
                 />
               </div>
+            </div>
+          )}
+
+          {purchasedInfo?.accountInfo ? (
+            <div style={{ marginTop: "2rem", padding: "1.5rem", background: "var(--surface-soft)", borderRadius: "12px", border: "1px solid var(--brand)", boxShadow: "0 10px 25px rgba(0,0,0,0.1)" }}>
+              <h3 style={{ color: "var(--brand)", marginBottom: "1rem" }}>Thông tin tài khoản của bạn</h3>
+              <pre style={{ whiteSpace: "pre-wrap", background: "var(--surface)", color: "var(--ink)", padding: "1rem", borderRadius: "8px", border: "1px solid var(--line)", fontSize: "1.05rem", fontWeight: "600" }}>
+                {purchasedInfo.accountInfo}
+              </pre>
+              <button 
+                className="btn btn-soft" 
+                style={{ marginTop: "1rem", width: "100%" }}
+                onClick={() => {
+                  navigator.clipboard.writeText(purchasedInfo.accountInfo);
+                  alert("Đã copy thông tin tài khoản!");
+                }}
+              >
+                Copy thông tin
+              </button>
+            </div>
+          ) : Number(tool.accountPrice || 0) > 0 && (
+            <div style={{ marginTop: "2rem", padding: "1.2rem", background: "rgba(255, 193, 7, 0.1)", color: "#b8860b", borderRadius: "12px", border: "1px dashed #b8860b", textAlign: "center" }}>
+              <p>Bạn cần mua sản phẩm này để xem thông tin tài khoản đăng nhập.</p>
             </div>
           )}
         </div>

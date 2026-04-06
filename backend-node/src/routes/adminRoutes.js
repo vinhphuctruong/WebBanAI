@@ -147,10 +147,10 @@ router.post("/catalog/ai-tools", async (req, res) => {
       accountPrice: Math.round(accountPrice),
       originalPrice: Number.isFinite(originalPrice) ? Math.max(0, Math.round(originalPrice)) : 0,
       availableCount: Number.isFinite(availableCount) ? Math.max(0, Math.round(availableCount)) : 0,
-      websiteUrl: String(req.body?.websiteUrl || ""),
-      tutorialUrl: String(req.body?.tutorialUrl || ""),
-      logo,
-      linkedGemIds
+      logo: String(req.body?.logo || "").trim(),
+      tutorialUrl: String(req.body?.tutorialUrl || "").trim(),
+      accountInfo: String(req.body?.accountInfo || "").trim(),
+      linkedGemIds: [String(req.body?.linkedGemIds || "")]
     });
 
     return res.status(201).json(created.toObject());
@@ -336,6 +336,10 @@ router.put("/catalog/ai-tools/:slug", async (req, res) => {
 
     if (req.body?.tutorialUrl !== undefined) {
       updates.tutorialUrl = String(req.body.tutorialUrl || "").trim();
+    }
+
+    if (req.body?.accountInfo !== undefined) {
+      updates.accountInfo = String(req.body.accountInfo || "").trim();
     }
 
     if (Object.keys(updates).length === 0) {
