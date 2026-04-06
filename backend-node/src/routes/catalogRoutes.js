@@ -33,7 +33,9 @@ router.get("/gems/:slug", async (req, res) => {
 router.get("/ai-tools", async (_req, res) => {
   const tools = await AiToolModel.find().sort({ createdAt: -1 }).lean();
   const secureTools = tools.map(tool => {
-    delete tool.accountInfo;
+    if (Number(tool.accountPrice || 0) > 0) {
+      delete tool.accountInfo;
+    }
     return tool;
   });
   return res.json(secureTools);
@@ -44,7 +46,9 @@ router.get("/ai-tools/:slug", async (req, res) => {
   if (!tool) {
     return res.status(404).json({ message: "Khong tim thay ai tool" });
   }
-  delete tool.accountInfo;
+  if (Number(tool.accountPrice || 0) > 0) {
+    delete tool.accountInfo;
+  }
   return res.json(tool);
 });
 

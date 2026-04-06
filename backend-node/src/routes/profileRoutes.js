@@ -93,7 +93,7 @@ router.get("/purchases/gems/:slug", async (req, res) => {
   }
 
   const orderCheck = await query(
-    `SELECT 1 FROM orders WHERE user_id = $1 AND item_slug = $2 AND status = 'paid' LIMIT 1`,
+    `SELECT 1 FROM orders WHERE user_id = $1 AND item_slug = $2 AND item_type = 'gem' AND status = 'paid' LIMIT 1`,
     [user.id, gem.slug]
   );
 
@@ -123,7 +123,7 @@ router.get("/purchases/ai-tools/:slug", async (req, res) => {
   }
 
   const orderCheck = await query(
-    `SELECT 1 FROM orders WHERE user_id = $1 AND item_slug = $2 AND status = 'paid' LIMIT 1`,
+    `SELECT 1 FROM orders WHERE user_id = $1 AND item_slug = $2 AND item_type = 'ai_tool' AND status = 'paid' LIMIT 1`,
     [user.id, tool.slug]
   );
 
