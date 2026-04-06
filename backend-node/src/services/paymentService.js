@@ -1,4 +1,4 @@
-﻿import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from "uuid";
 import { query, withTransaction } from "../config/postgres.js";
 import { env } from "../config/env.js";
 import { GemModel } from "../models/Gem.js";
@@ -117,7 +117,7 @@ export async function listPayments() {
 
 export async function confirmPayment(paymentId, requesterRole, requesterUserId) {
   const result = await query(
-    `SELECT p.id, p.user_id, p.order_id, p.status, o.amount
+    `SELECT p.id, p.user_id, p.order_id, p.status, o.amount, o.item_type, o.item_slug
      FROM payments p
      JOIN orders o ON o.id = p.order_id
      WHERE p.id = $1`,
@@ -159,6 +159,13 @@ export async function confirmPayment(paymentId, requesterRole, requesterUserId) 
       `UPDATE orders SET status = 'paid', updated_at = NOW() WHERE id = $1`,
       [row.order_id]
     );
+
+    if (row.item_type === 'ai_tool') {
+      await AiToolModel.updateOne(
+        { slug: row.item_slug },
+        { $inc: { availableCount: -1 } }
+      );
+    }
 
     await rewardReferralIfAny({
       buyerUserId: row.user_id,

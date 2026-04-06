@@ -57,6 +57,8 @@ router.post("/catalog/gems", async (req, res) => {
     const description = String(req.body?.description || "").trim();
     const thumbnail = String(req.body?.thumbnail || "").trim();
     const categoryId = String(req.body?.categoryId || "cat-general").trim() || "cat-general";
+    const promptInstruction = String(req.body?.promptInstruction || "").trim();
+    const promptContent = String(req.body?.promptContent || "").trim();
 
     if (!title || !slug) {
       return res.status(400).json({ message: "Can co tieu de va slug hop le" });
@@ -89,7 +91,9 @@ router.post("/catalog/gems", async (req, res) => {
       workflowLink: String(req.body?.workflowLink || ""),
       tutorialVideo: String(req.body?.tutorialVideo || ""),
       tutorialSteps: Array.isArray(req.body?.tutorialSteps) ? req.body.tutorialSteps : [],
-      linkedAiToolId: String(req.body?.linkedAiToolId || "")
+      linkedAiToolId: String(req.body?.linkedAiToolId || ""),
+      promptInstruction,
+      promptContent
     });
 
     return res.status(201).json(created.toObject());
@@ -223,6 +227,14 @@ router.put("/catalog/gems/:slug", async (req, res) => {
 
     if (req.body?.productType !== undefined) {
       updates.productType = String(req.body.productType || "").trim();
+    }
+
+    if (req.body?.promptInstruction !== undefined) {
+      updates.promptInstruction = String(req.body.promptInstruction || "").trim();
+    }
+
+    if (req.body?.promptContent !== undefined) {
+      updates.promptContent = String(req.body.promptContent || "").trim();
     }
 
     if (Object.keys(updates).length === 0) {

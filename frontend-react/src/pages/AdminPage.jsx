@@ -3,6 +3,12 @@ import { Navigate } from "react-router-dom";
 import { api, money } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
+function getYouTubeId(url) {
+  if (!url) return null;
+  const match = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?]+)/);
+  return match ? match[1] : null;
+}
+
 function paymentStatusLabel(status) {
   if (status === "success") return "Đã thanh toán";
   if (status === "submitted") return "Chờ duyệt";
@@ -27,9 +33,13 @@ const initialProductForm = {
   originalPrice: "",
   description: "",
   imageUrl: "",
+  tutorialUrl: "",
+  tutorialVideo: "",
   stock: "",
   features: "",
-  productType: "chatbot_prompt"
+  productType: "chatbot_prompt",
+  promptInstruction: "",
+  promptContent: ""
 };
 
 function gemToForm(gem) {
@@ -41,9 +51,12 @@ function gemToForm(gem) {
     originalPrice: String(gem.originalPrice ?? ""),
     description: gem.description || "",
     imageUrl: gem.thumbnail || "",
+    tutorialVideo: gem.tutorialVideo || "",
     stock: "",
     features: "",
-    productType: gem.productType || "chatbot_prompt"
+    productType: gem.productType || "chatbot_prompt",
+    promptInstruction: gem.promptInstruction || "",
+    promptContent: gem.promptContent || ""
   };
 }
 
@@ -56,6 +69,7 @@ function toolToForm(tool) {
     originalPrice: String(tool.originalPrice ?? ""),
     description: tool.description || "",
     imageUrl: tool.logo || "",
+    tutorialUrl: tool.tutorialUrl || "",
     stock: String(tool.availableCount ?? ""),
     features: Array.isArray(tool.features) ? tool.features.join(", ") : "",
     productType: "chatbot_prompt"
@@ -77,6 +91,7 @@ export default function AdminPage() {
   const [productType, setProductType] = useState("gem");
   const [productForm, setProductForm] = useState(initialProductForm);
   const [editingItem, setEditingItem] = useState(null);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const isGem = productType === "gem";
 
@@ -144,12 +159,14 @@ export default function AdminPage() {
     setProductType("gem");
     setEditingItem({ type: "gem", slug: gem.slug });
     setProductForm(gemToForm(gem));
+    setActiveTab("add_product");
   }
 
   function startEditTool(tool) {
     setProductType("tool");
     setEditingItem({ type: "tool", slug: tool.slug });
     setProductForm(toolToForm(tool));
+    setActiveTab("add_product");
   }
 
   function cancelEditing() {
@@ -187,7 +204,10 @@ export default function AdminPage() {
           description: String(productForm.description || ""),
           thumbnail: String(productForm.imageUrl || ""),
           gallery: productForm.imageUrl ? [String(productForm.imageUrl)] : [],
-          productType: String(productForm.productType || "chatbot_prompt")
+          productType: String(productForm.productType || "chatbot_prompt"),
+          tutorialVideo: String(productForm.tutorialVideo || ""),
+          promptInstruction: String(productForm.promptInstruction || ""),
+          promptContent: String(productForm.promptContent || "")
         };
 
         await api(isEditing ? `/admin/catalog/gems/${editingItem.slug}` : "/admin/catalog/gems", {
@@ -209,6 +229,7 @@ export default function AdminPage() {
           availableCount: Number(productForm.stock || 0),
           description: String(productForm.description || ""),
           logo: String(productForm.imageUrl || ""),
+          tutorialUrl: String(productForm.tutorialUrl || ""),
           features
         };
 
@@ -230,11 +251,31 @@ export default function AdminPage() {
   }
 
   return (
-    <section className="stack">
-      <h1>Bảng điều khiển quản trị</h1>
-      {error && <p className="error">{error}</p>}
-      {info && <p className="success">{info}</p>}
+    <div className="catalog-layout">
+      <aside className="catalog-sidebar">
+        <div className="filter-group">
+          <div className="panel-label">Dashboard</div>
+          <button type="button" className={`filter-option ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>Tổng quan</button>
+          <button type="button" className={`filter-option ${activeTab === 'add_product' ? 'active' : ''}`} onClick={() => setActiveTab('add_product')}>Cập nhật Sản phẩm</button>
+          <div className="panel-label">Sản phẩm</div>
+          <button type="button" className={`filter-option ${activeTab === 'gems' ? 'active' : ''}`} onClick={() => setActiveTab('gems')}>Danh sách Prompt</button>
+          <button type="button" className={`filter-option ${activeTab === 'tools' ? 'active' : ''}`} onClick={() => setActiveTab('tools')}>Danh sách AI Tool</button>
+          <div className="panel-label">Kinh doanh</div>
+          <button type="button" className={`filter-option ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>Người dùng</button>
+          <button type="button" className={`filter-option ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>Đơn hàng</button>
+          <button type="button" className={`filter-option ${activeTab === 'payments' ? 'active' : ''}`} onClick={() => setActiveTab('payments')}>Giao dịch</button>
+        </div>
+      </aside>
 
+      <div className="catalog-main">
+        <section className="stack">
+          <div className="row-head" style={{ marginBottom: 0 }}>
+            <h1>Bảng điều khiển quản trị</h1>
+          </div>
+          {error && <p className="error">{error}</p>}
+          {info && <p className="success">{info}</p>}
+
+      {activeTab === 'add_product' && (
       <article className="card">
         <div className="row-head admin-add-head">
           <h2>{editingItem ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm để bán"}</h2>
@@ -326,6 +367,28 @@ export default function AdminPage() {
             </label>
           )}
 
+          {isGem && (
+            <label className="admin-span-all">
+              Link Video Hướng Dẫn (YouTube)
+              <input
+                value={productForm.tutorialVideo}
+                onChange={(event) => updateProductField("tutorialVideo", event.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
+              />
+            </label>
+          )}
+
+          {!isGem && (
+            <label className="admin-span-all">
+              Link Video Hướng Dẫn (YouTube)
+              <input
+                value={productForm.tutorialUrl}
+                onChange={(event) => updateProductField("tutorialUrl", event.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
+              />
+            </label>
+          )}
+
           {!isGem && (
             <label className="admin-span-all">
               Features (cách nhau bởi dấu phẩy)
@@ -347,6 +410,30 @@ export default function AdminPage() {
             />
           </label>
 
+          {isGem && (
+            <>
+              <label className="admin-span-all">
+                Nội dung Hướng dẫn (tuỳ chọn)
+                <textarea
+                  rows="3"
+                  value={productForm.promptInstruction}
+                  onChange={(event) => updateProductField("promptInstruction", event.target.value)}
+                  placeholder="Cách sử dụng, các tham số cần thay thế..."
+                />
+              </label>
+
+              <label className="admin-span-all">
+                Nội dung Prompt (sẽ hiển thị khi khách đã mua / hàng miễn phí)
+                <textarea
+                  rows="5"
+                  value={productForm.promptContent}
+                  onChange={(event) => updateProductField("promptContent", event.target.value)}
+                  placeholder="Viết một kịch bản UGC..."
+                />
+              </label>
+            </>
+          )}
+
           <label className="admin-span-all">
             Ảnh đại diện URL
             <input
@@ -366,7 +453,9 @@ export default function AdminPage() {
           </div>
         </form>
       </article>
+      )}
 
+      {activeTab === 'gems' && (
       <article className="card">
         <h2>Danh sách Prompt</h2>
         <div className="table-wrap">
@@ -394,7 +483,9 @@ export default function AdminPage() {
           </table>
         </div>
       </article>
+      )}
 
+      {activeTab === 'tools' && (
       <article className="card">
         <h2>Danh sách AI Tool</h2>
         <div className="table-wrap">
@@ -422,8 +513,9 @@ export default function AdminPage() {
           </table>
         </div>
       </article>
+      )}
 
-      {dashboard && (
+      {activeTab === 'dashboard' && dashboard && (
         <div className="grid four-cols">
           <article className="card"><h3>Người dùng</h3><p className="big">{dashboard.totalUsers}</p></article>
           <article className="card"><h3>Đơn hàng</h3><p className="big">{dashboard.totalOrders}</p></article>
@@ -432,6 +524,7 @@ export default function AdminPage() {
         </div>
       )}
 
+      {activeTab === 'users' && (
       <article className="card">
         <h2>Người dùng</h2>
         <div className="table-wrap">
@@ -445,7 +538,9 @@ export default function AdminPage() {
           </table>
         </div>
       </article>
+      )}
 
+      {activeTab === 'orders' && (
       <article className="card">
         <h2>Đơn hàng</h2>
         <div className="table-wrap">
@@ -459,7 +554,9 @@ export default function AdminPage() {
           </table>
         </div>
       </article>
+      )}
 
+      {activeTab === 'payments' && (
       <article className="card">
         <h2>Giao dịch thanh toán</h2>
         <div className="table-wrap">
@@ -491,6 +588,9 @@ export default function AdminPage() {
           </table>
         </div>
       </article>
-    </section>
+      )}
+        </section>
+      </div>
+    </div>
   );
 }

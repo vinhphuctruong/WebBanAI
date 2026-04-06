@@ -1,4 +1,4 @@
-﻿import mongoose from "mongoose";
+import mongoose from "mongoose";
 
 const tutorialStepSchema = new mongoose.Schema(
   {
@@ -25,7 +25,9 @@ const gemSchema = new mongoose.Schema(
     workflowLink: String,
     tutorialVideo: String,
     tutorialSteps: [tutorialStepSchema],
-    linkedAiToolId: String
+    linkedAiToolId: String,
+    promptInstruction: { type: String, default: "" },
+    promptContent: { type: String, default: "" }
   },
   { timestamps: true, collection: "gems" }
 );

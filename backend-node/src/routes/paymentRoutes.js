@@ -1,6 +1,7 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.js";
 import { createPayment, getPaymentById, confirmPayment } from "../services/paymentService.js";
+import { query } from "../config/postgres.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -21,6 +22,28 @@ router.post("/create", async (req, res) => {
     return res.json(data);
   } catch (err) {
     return res.status(400).json({ message: err.message || "Khong tao duoc payment" });
+  }
+});
+
+router.post("/check-existing", async (req, res) => {
+  try {
+    const { itemType, slug } = req.body || {};
+    if (!itemType || !slug) return res.json({ exists: false });
+    const normalizedType = itemType === "ai" ? "ai_tool" : itemType;
+    const result = await query(
+      `SELECT p.id as payment_id, p.status 
+       FROM payments p
+       JOIN orders o ON o.id = p.order_id
+       WHERE p.user_id = $1 AND o.item_type = $2 AND o.item_slug = $3
+       ORDER BY p.created_at DESC LIMIT 1`,
+      [req.user.sub, normalizedType, slug]
+    );
+    if (result.rows.length > 0) {
+      return res.json({ exists: true, paymentId: result.rows[0].payment_id, status: result.rows[0].status });
+    }
+    return res.json({ exists: false });
+  } catch (err) {
+    return res.json({ exists: false });
   }
 });
 

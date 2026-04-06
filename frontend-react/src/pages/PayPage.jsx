@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams, Link } from "react-router-dom";
 import { api, money } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
 export default function PayPage() {
   const { itemType, slug } = useParams();
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
+  
+  const [step, setStep] = useState("checking");
+  const [existingPayment, setExistingPayment] = useState(null);
+  
   const [payment, setPayment] = useState(null);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
@@ -14,18 +17,93 @@ export default function PayPage() {
   useEffect(() => {
     if (!user) return;
 
+    api("/payments/check-existing", {
+      method: "POST",
+      body: JSON.stringify({ itemType, slug })
+    })
+      .then((res) => {
+        if (res.exists) {
+          setExistingPayment(res);
+          setStep("prompt");
+        } else {
+          startNewPayment();
+        }
+      })
+      .catch((err) => {
+        setError(err.message);
+        setStep("error");
+      });
+  }, [user, itemType, slug]);
+
+  function startNewPayment() {
+    setStep("creating");
     api("/payments/create", {
       method: "POST",
       body: JSON.stringify({ itemType, slug, quantity: 1 })
     })
-      .then((res) => setPayment(res.payment))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [user, itemType, slug]);
+      .then((res) => {
+        setPayment(res.payment);
+        setStep("payment");
+      })
+      .catch((err) => {
+        setError(err.message);
+        setStep("error");
+      });
+  }
+
+  function loadExistingPayment() {
+    setStep("creating");
+    api(`/payments/${existingPayment.paymentId}`)
+      .then((res) => {
+        setPayment(res.payment);
+        setStep("payment");
+      })
+      .catch((err) => {
+        setError(err.message);
+        setStep("error");
+      });
+  }
 
   if (!user) return <Navigate to="/auth" replace />;
-  if (loading) return <p>Đang tạo giao dịch...</p>;
+
+  if (step === "checking") return <p>Đang kiểm tra thông tin...</p>;
+  if (step === "creating") return <p>Đang thiết lập giao dịch...</p>;
+
+  if (step === "prompt") {
+    function translateStatus(s) {
+      if (s === "success") return "Đã thanh toán (Thành công)";
+      if (s === "submitted") return "Chờ duyệt (Đã chuyển khoản)";
+      return "Chưa xác nhận";
+    }
+
+    return (
+      <section className="stack">
+        <div className="card" style={{ maxWidth: 500, margin: "2rem auto", padding: "2rem", textAlign: "center" }}>
+          <h2 style={{ marginBottom: "1rem" }}>Bạn đã từng Mua sản phẩm này!</h2>
+          <p style={{ marginBottom: "2rem" }}>
+            Hệ thống ghi nhận bạn đã có một lệnh thanh toán với trạng thái: <br/>
+            <strong style={{ color: "var(--brand)", fontSize: "1.2rem", display: "block", marginTop: "0.5rem" }}>
+              {translateStatus(existingPayment.status)}
+            </strong>
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
+            <button className="btn btn-primary" onClick={loadExistingPayment}>
+              Xem lại hoá đơn cũ đó
+            </button>
+            <button className="btn btn-outline" onClick={startNewPayment}>
+              Mua thêm
+            </button>
+            <Link to="/" className="btn btn-ghost">
+              Trở về trang chủ
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (error) return <p className="error">{error}</p>;
+  if (!payment) return null;
 
   async function confirm() {
     try {

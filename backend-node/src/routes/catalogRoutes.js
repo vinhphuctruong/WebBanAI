@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import { GemModel } from "../models/Gem.js";
 import { AiToolModel } from "../models/AiTool.js";
 import { ReviewModel } from "../models/Review.js";
@@ -8,13 +8,24 @@ const router = Router();
 
 router.get("/gems", async (_req, res) => {
   const gems = await GemModel.find().sort({ createdAt: -1 }).lean();
-  return res.json(gems);
+  const secureGems = gems.map(gem => {
+    if (gem.price > 0) {
+      delete gem.promptContent;
+      delete gem.promptInstruction;
+    }
+    return gem;
+  });
+  return res.json(secureGems);
 });
 
 router.get("/gems/:slug", async (req, res) => {
   const gem = await GemModel.findOne({ slug: req.params.slug }).lean();
   if (!gem) {
     return res.status(404).json({ message: "Khong tim thay gem" });
+  }
+  if (gem.price > 0) {
+    delete gem.promptContent;
+    delete gem.promptInstruction;
   }
   return res.json(gem);
 });
