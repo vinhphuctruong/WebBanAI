@@ -193,7 +193,7 @@ export default function PurchasedProductsPage() {
   }
 
   return (
-    <section className="stack">
+    <section className="stack pp-page">
       <h1>Sản phẩm đã mua</h1>
       {error && <p className="error">{error}</p>}
       {info && <p className="success">{info}</p>}
@@ -202,12 +202,12 @@ export default function PurchasedProductsPage() {
       {loading ? (
         <p>Đang tải sản phẩm đã mua...</p>
       ) : purchases.length === 0 ? (
-        <article className="card">
+        <article className="card pp-empty">
           <h3>Bạn chưa mua sản phẩm nào</h3>
           <p>Hãy khám phá thư viện Prompt và AI Tool để bắt đầu.</p>
         </article>
       ) : (
-        <div className="grid two-cols">
+        <div className="pp-grid">
           {purchases.map((purchase) => {
             const normalizedType = normalizePurchaseType(purchase.item_type);
             const isGem = normalizedType === "gem";
@@ -225,32 +225,26 @@ export default function PurchasedProductsPage() {
             const isVideoOpen = Boolean(videoOpenRows[rowId]);
 
             return (
-              <article key={purchase.id} className="card">
+              <article key={purchase.id} className="pp-card">
                 <img
                   src={imageUrl}
                   alt={title}
-                  style={{
-                    width: "100%",
-                    aspectRatio: "16 / 9",
-                    objectFit: "cover",
-                    borderRadius: "12px",
-                    border: "1px solid var(--line)"
-                  }}
+                  className="pp-thumb"
                 />
 
-                <div className="row-head" style={{ marginBottom: 0 }}>
+                <div className="pp-head">
                   <h3>{title}</h3>
                   <span className="tag">{formatPurchaseType(purchase.item_type)}</span>
                 </div>
 
-                {description && <p>{description}</p>}
-                <p><strong>Ngày mua:</strong> {new Date(purchase.created_at).toLocaleDateString("vi-VN")}</p>
+                {description && <p className="pp-desc">{description}</p>}
+                <p className="pp-date"><strong>Ngày mua:</strong> {new Date(purchase.created_at).toLocaleDateString("vi-VN")}</p>
 
                 {youtubeId && (
-                  <div style={{ display: "grid", gap: "0.5rem" }}>
+                  <div className="pp-video-box">
                     <button
                       type="button"
-                      className="btn btn-soft"
+                      className="pp-btn pp-btn-soft"
                       onClick={() => setVideoOpenRows((prev) => ({ ...prev, [rowId]: !prev[rowId] }))}
                     >
                       {isVideoOpen ? "Ẩn video" : "Hiện video"}
@@ -259,13 +253,7 @@ export default function PurchasedProductsPage() {
                       <iframe
                         src={`https://www.youtube.com/embed/${youtubeId}?rel=0`}
                         title={`Video ${title}`}
-                        style={{
-                          width: "100%",
-                          aspectRatio: "16 / 9",
-                          border: "1px solid var(--line)",
-                          borderRadius: "10px",
-                          background: "#000"
-                        }}
+                        className="pp-video"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                       />
@@ -273,48 +261,38 @@ export default function PurchasedProductsPage() {
                   </div>
                 )}
 
-                <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
-                  <Link to={productLink(purchase.item_type, purchase.item_slug)} className="btn btn-outline">
+                <div className="pp-actions">
+                  <Link to={productLink(purchase.item_type, purchase.item_slug)} className="pp-btn pp-btn-outline">
                     Xem sản phẩm
                   </Link>
                   {isGem && (
-                    <button type="button" className="btn btn-soft" disabled={isPromptLoading} onClick={() => togglePrompt(purchase)}>
+                    <button type="button" className="pp-btn pp-btn-soft" disabled={isPromptLoading} onClick={() => togglePrompt(purchase)}>
                       {isPromptLoading ? "Đang tải..." : isPromptOpen ? "Ẩn Prompt" : "Hiện Prompt"}
                     </button>
                   )}
                 </div>
 
                 {isGem && isPromptOpen && (
-                  <div style={{ marginTop: "0.45rem", display: "grid", gap: "0.65rem" }}>
+                  <div className="pp-prompt-wrap">
                     {promptError && <p className="error">{promptError}</p>}
                     {!promptError && isPromptLoading && <p>Đang tải nội dung prompt...</p>}
 
                     {!promptError && !isPromptLoading && promptDetail?.promptInstruction && (
-                      <div>
+                      <div className="pp-instruction">
                         <p><strong>Hướng dẫn sử dụng:</strong></p>
-                        <p style={{ whiteSpace: "pre-wrap", color: "var(--ink)" }}>{promptDetail.promptInstruction}</p>
+                        <p>{promptDetail.promptInstruction}</p>
                       </div>
                     )}
 
                     {!promptError && !isPromptLoading && promptDetail?.promptContent && (
-                      <div style={{ display: "grid", gap: "0.5rem" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem" }}>
+                      <div className="pp-prompt-content">
+                        <div className="pp-prompt-head">
                           <p><strong>Nội dung Prompt:</strong></p>
-                          <button type="button" className="btn btn-primary" onClick={() => copyPrompt(rowId)}>
+                          <button type="button" className="pp-btn pp-btn-primary" onClick={() => copyPrompt(rowId)}>
                             Copy toàn bộ Prompt
                           </button>
                         </div>
-                        <pre
-                          style={{
-                            margin: 0,
-                            whiteSpace: "pre-wrap",
-                            background: "var(--surface-raised)",
-                            color: "var(--ink)",
-                            border: "1px solid var(--line)",
-                            borderRadius: "8px",
-                            padding: "0.85rem"
-                          }}
-                        >
+                        <pre className="pp-prompt-box">
                           {promptDetail.promptContent}
                         </pre>
                       </div>
