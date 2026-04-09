@@ -322,6 +322,9 @@ export default function HomePage() {
             ].map(({ to, label }) => (
               <Link key={to} to={to} className="mlv-header-link">{label}</Link>
             ))}
+            {user?.role === "admin" && (
+              <Link to="/admin" className="mlv-header-auth-btn" style={{ marginLeft: '0.5rem' }}>Admin MLV</Link>
+            )}
           </nav>
 
           <Link to={user ? "/profile" : "/auth"} className="mlv-header-auth-btn">
