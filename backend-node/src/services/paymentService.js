@@ -5,6 +5,28 @@ import { GemModel } from "../models/Gem.js";
 import { AiToolModel } from "../models/AiTool.js";
 import { rewardReferralIfAny } from "./userService.js";
 
+let orderContactColumnsReady = false;
+let ensureOrderContactColumnsTask = null;
+
+async function ensureOrderContactColumns() {
+  if (orderContactColumnsReady) return;
+  if (ensureOrderContactColumnsTask) {
+    await ensureOrderContactColumnsTask;
+    return;
+  }
+
+  ensureOrderContactColumnsTask = (async () => {
+    await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name VARCHAR(150)`);
+    await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(30)`);
+    await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email VARCHAR(190)`);
+    orderContactColumnsReady = true;
+  })().finally(() => {
+    ensureOrderContactColumnsTask = null;
+  });
+
+  await ensureOrderContactColumnsTask;
+}
+
 async function loadProduct(type, slug) {
   if (type === "gem") {
     return GemModel.findOne({ slug }).lean();
@@ -16,6 +38,8 @@ async function loadProduct(type, slug) {
 }
 
 export async function createPayment({ userId, itemType, slug, quantity = 1, customerName = null, customerPhone = null, customerEmail = null }) {
+  await ensureOrderContactColumns();
+
   const normalizedType = itemType === "ai" ? "ai_tool" : itemType;
   const product = await loadProduct(normalizedType, slug);
   if (!product) {
@@ -53,6 +77,8 @@ export async function createPayment({ userId, itemType, slug, quantity = 1, cust
 }
 
 export async function getPaymentById(paymentId, requesterUserId, allowStaff = false) {
+  await ensureOrderContactColumns();
+
   const result = await query(
     `SELECT p.id, p.order_id, p.user_id, p.provider, p.status, p.payment_code, p.payment_url, p.instruction,
             p.created_at, o.amount, o.currency, o.item_type, o.item_slug, o.title, u.full_name,
@@ -97,6 +123,8 @@ export async function getPaymentById(paymentId, requesterUserId, allowStaff = fa
 }
 
 export async function listOrders() {
+  await ensureOrderContactColumns();
+
   const result = await query(
     `SELECT o.id, o.user_id, o.item_type, o.item_slug, o.title, o.amount, o.currency, o.status, o.created_at, u.email,
             o.customer_name, o.customer_phone, o.customer_email

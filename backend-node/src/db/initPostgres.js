@@ -1,4 +1,4 @@
-﻿import fs from "node:fs/promises";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import bcrypt from "bcryptjs";
@@ -41,6 +41,11 @@ export async function initPostgres() {
   const schemaPath = path.resolve(__dirname, "schema.sql");
   const schema = await fs.readFile(schemaPath, "utf8");
   await query(schema);
+
+  // Ensure new columns exist for manual contact flow
+  await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_name VARCHAR(150)`);
+  await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(30)`);
+  await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email VARCHAR(190)`);
 
   await upsertUser({
     email: "admin@maulamvideo.com",
