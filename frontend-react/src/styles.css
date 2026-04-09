@@ -2592,6 +2592,13 @@ p {
   font-size: 1rem;
   flex-shrink: 0;
 }
+.mlv-sidebar-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
 .mlv-sidebar-group-label {
   padding: 0.5rem 0.5rem 0.25rem;
   font-size: 0.7rem;

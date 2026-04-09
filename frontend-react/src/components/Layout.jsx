@@ -117,8 +117,8 @@ export default function Layout({ children }) {
       <header className="mlv-header">
         <div className="mlv-header-inner">
           <Link to="/" className="mlv-header-brand">
-            <img src="/tm-software-logo.svg" alt="Mẫu Làm Video" className="mlv-header-logo" />
-            <span>Mẫu Làm<em>Video</em></span>
+            <img src="/tm-aivideo-logo.jpg" alt="TM AIVIDEO" className="mlv-header-logo" />
+            <span>TM <em>AIVIDEO</em></span>
           </Link>
 
           <nav className="mlv-header-nav" aria-label="Navigation chính">
@@ -171,9 +171,9 @@ export default function Layout({ children }) {
 
       <div className={`mlv-shell${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
         <aside className="mlv-sidebar" aria-label="Điều hướng sidebar">
-          <Link to="/" className="mlv-sidebar-brand" title="AI Templates">
-            <div className="mlv-sidebar-icon">✨</div>
-            <strong className="mlv-sidebar-text">AI Templates</strong>
+          <Link to="/" className="mlv-sidebar-brand" title="TM AIVIDEO">
+            <img src="/tm-aivideo-logo.jpg" alt="TM AIVIDEO" className="mlv-sidebar-logo" />
+            <strong className="mlv-sidebar-text">TM AIVIDEO</strong>
           </Link>
 
           <nav className="mlv-sidebar-nav">

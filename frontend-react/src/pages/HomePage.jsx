@@ -5,7 +5,7 @@ import { useAuth } from "../lib/auth.jsx";
 
 /* ─── constants ──────────────────────────────────────────── */
 const SALE_DURATION_MS = ((11 * 24 + 6) * 60 * 60 + 34 * 60 + 23) * 1000;
-const FALLBACK_IMAGE = "/tm-software-logo.svg";
+const FALLBACK_IMAGE = "/tm-aivideo-logo.jpg";
 
 /* ─── YouTube helper ─────────────────────────────────────── */
 function getYouTubeId(url) {
