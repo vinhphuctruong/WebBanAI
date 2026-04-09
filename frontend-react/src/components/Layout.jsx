@@ -171,11 +171,6 @@ export default function Layout({ children }) {
 
       <div className={`mlv-shell${sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
         <aside className="mlv-sidebar" aria-label="Điều hướng sidebar">
-          <Link to="/" className="mlv-sidebar-brand" title="TM AIVIDEO">
-            <img src="/tm-aivideo-logo.jpg" alt="TM AIVIDEO" className="mlv-sidebar-logo" />
-            <strong className="mlv-sidebar-text">TM AIVIDEO</strong>
-          </Link>
-
           <nav className="mlv-sidebar-nav">
             {sidebarSections.map((section) => (
               <div key={section.label}>
