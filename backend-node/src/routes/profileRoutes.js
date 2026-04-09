@@ -9,6 +9,68 @@ const router = Router();
 
 router.use(requireAuth);
 
+const PROTECTED_ACCESS_WINDOW_MS = 60 * 1000;
+const PROTECTED_ACCESS_MAX_HITS = 20;
+const protectedAccessHits = new Map();
+
+function pruneExpiredProtectedAccess(now = Date.now()) {
+  const threshold = now - PROTECTED_ACCESS_WINDOW_MS;
+  for (const [key, hits] of protectedAccessHits.entries()) {
+    const recentHits = hits.filter((ts) => ts > threshold);
+    if (recentHits.length === 0) {
+      protectedAccessHits.delete(key);
+    } else if (recentHits.length !== hits.length) {
+      protectedAccessHits.set(key, recentHits);
+    }
+  }
+}
+
+function logProtectedAccess(event, req, detail = {}) {
+  console.info(
+    `[protected-access] ${JSON.stringify({
+      event,
+      userId: req.user?.sub || null,
+      role: req.user?.role || null,
+      route: req.originalUrl,
+      ip: req.ip,
+      time: new Date().toISOString(),
+      ...detail
+    })}`
+  );
+}
+
+function rateLimitProtectedAccess(bucket) {
+  return (req, res, next) => {
+    const now = Date.now();
+    const userId = req.user?.sub || "anonymous";
+    const key = `${bucket}:${userId}`;
+
+    const currentHits = protectedAccessHits.get(key) || [];
+    const windowStart = now - PROTECTED_ACCESS_WINDOW_MS;
+    const recentHits = currentHits.filter((ts) => ts > windowStart);
+
+    if (recentHits.length >= PROTECTED_ACCESS_MAX_HITS) {
+      logProtectedAccess("rate_limited", req, {
+        bucket,
+        limit: PROTECTED_ACCESS_MAX_HITS,
+        windowMs: PROTECTED_ACCESS_WINDOW_MS
+      });
+      return res.status(429).json({
+        message: "Ban thao tac qua nhanh. Vui long thu lai sau it phut."
+      });
+    }
+
+    recentHits.push(now);
+    protectedAccessHits.set(key, recentHits);
+
+    if (Math.random() < 0.02) {
+      pruneExpiredProtectedAccess(now);
+    }
+
+    return next();
+  };
+}
+
 router.get("/me", async (req, res) => {
   const user = await findUserById(req.user.sub);
   if (!user) {
@@ -74,18 +136,23 @@ router.post("/bookmarks/toggle", async (req, res) => {
   return res.json({ bookmarked: true });
 });
 
-router.get("/purchases/gems/:slug", async (req, res) => {
+router.get("/purchases/gems/:slug", rateLimitProtectedAccess("gems"), async (req, res) => {
   const user = await findUserById(req.user.sub);
   if (!user) {
+    logProtectedAccess("user_not_found", req, { slug: req.params.slug, itemType: "gem" });
     return res.status(404).json({ message: "Khong tim thay user" });
   }
 
-  const gem = await GemModel.findOne({ slug: req.params.slug }).lean();
+  const gem = await GemModel.findOne({ slug: req.params.slug })
+    .select("slug promptInstruction promptContent")
+    .lean();
   if (!gem) {
+    logProtectedAccess("item_not_found", req, { slug: req.params.slug, itemType: "gem" });
     return res.status(404).json({ message: "Khong tim thay gem" });
   }
 
   if (["admin", "staff", "sale"].includes(user.role)) {
+    logProtectedAccess("granted_staff", req, { slug: gem.slug, itemType: "gem" });
     return res.json({
       promptInstruction: gem.promptInstruction,
       promptContent: gem.promptContent
@@ -100,27 +167,34 @@ router.get("/purchases/gems/:slug", async (req, res) => {
   );
 
   if (orderCheck.rows.length === 0) {
+    logProtectedAccess("denied_not_owned", req, { slug: gem.slug, itemType: "gem" });
     return res.status(403).json({ message: "Ban chua so huu san pham nay" });
   }
 
+  logProtectedAccess("granted_owner", req, { slug: gem.slug, itemType: "gem" });
   return res.json({
     promptInstruction: gem.promptInstruction,
     promptContent: gem.promptContent
   });
 });
 
-router.get("/purchases/ai-tools/:slug", async (req, res) => {
+router.get("/purchases/ai-tools/:slug", rateLimitProtectedAccess("ai-tools"), async (req, res) => {
   const user = await findUserById(req.user.sub);
   if (!user) {
+    logProtectedAccess("user_not_found", req, { slug: req.params.slug, itemType: "ai_tool" });
     return res.status(404).json({ message: "Khong tim thay user" });
   }
 
-  const tool = await AiToolModel.findOne({ slug: req.params.slug }).lean();
+  const tool = await AiToolModel.findOne({ slug: req.params.slug })
+    .select("slug accountInfo")
+    .lean();
   if (!tool) {
+    logProtectedAccess("item_not_found", req, { slug: req.params.slug, itemType: "ai_tool" });
     return res.status(404).json({ message: "Khong tim thay tool" });
   }
 
   if (["admin", "staff", "sale"].includes(user.role)) {
+    logProtectedAccess("granted_staff", req, { slug: tool.slug, itemType: "ai_tool" });
     return res.json({ accountInfo: tool.accountInfo });
   }
 
@@ -132,9 +206,11 @@ router.get("/purchases/ai-tools/:slug", async (req, res) => {
   );
 
   if (orderCheck.rows.length === 0) {
+    logProtectedAccess("denied_not_owned", req, { slug: tool.slug, itemType: "ai_tool" });
     return res.status(403).json({ message: "Ban chua so huu san pham nay" });
   }
 
+  logProtectedAccess("granted_owner", req, { slug: tool.slug, itemType: "ai_tool" });
   return res.json({ accountInfo: tool.accountInfo });
 });
 
