@@ -13,6 +13,7 @@ const aiToolSchema = new mongoose.Schema(
     availableCount: { type: Number, default: 0 },
     websiteUrl: String,
     tutorialUrl: String,
+    videoUrl: String,
     logo: String,
     accountInfo: String,
     linkedGemIds: [String]

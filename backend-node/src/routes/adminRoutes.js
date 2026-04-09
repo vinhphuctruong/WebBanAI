@@ -149,6 +149,7 @@ router.post("/catalog/ai-tools", async (req, res) => {
       availableCount: Number.isFinite(availableCount) ? Math.max(0, Math.round(availableCount)) : 0,
       logo: String(req.body?.logo || "").trim(),
       tutorialUrl: String(req.body?.tutorialUrl || "").trim(),
+      videoUrl: String(req.body?.videoUrl || "").trim(),
       accountInfo: String(req.body?.accountInfo || "").trim(),
       linkedGemIds: [String(req.body?.linkedGemIds || "")]
     });
@@ -336,6 +337,10 @@ router.put("/catalog/ai-tools/:slug", async (req, res) => {
 
     if (req.body?.tutorialUrl !== undefined) {
       updates.tutorialUrl = String(req.body.tutorialUrl || "").trim();
+    }
+
+    if (req.body?.videoUrl !== undefined) {
+      updates.videoUrl = String(req.body.videoUrl || "").trim();
     }
 
     if (req.body?.accountInfo !== undefined) {

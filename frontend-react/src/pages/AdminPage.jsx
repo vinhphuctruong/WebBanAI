@@ -35,6 +35,7 @@ const initialProductForm = {
   imageUrl: "",
   tutorialUrl: "",
   tutorialVideo: "",
+  videoUrl: "",
   stock: "",
   features: "",
   productType: "chatbot_prompt",
@@ -70,6 +71,7 @@ function toolToForm(tool) {
     description: tool.description || "",
     imageUrl: tool.logo || "",
     tutorialUrl: tool.tutorialUrl || "",
+    videoUrl: tool.videoUrl || "",
     stock: String(tool.availableCount ?? ""),
     features: Array.isArray(tool.features) ? tool.features.join(", ") : "",
     productType: "chatbot_prompt"
@@ -230,6 +232,7 @@ export default function AdminPage() {
           description: String(productForm.description || ""),
           logo: String(productForm.imageUrl || ""),
           tutorialUrl: String(productForm.tutorialUrl || ""),
+          videoUrl: String(productForm.videoUrl || ""),
           features
         };
 
@@ -380,11 +383,22 @@ export default function AdminPage() {
 
           {!isGem && (
             <label className="admin-span-all">
-              Link Video Hướng Dẫn (YouTube)
+              Link Video Demo / Giới Thiệu Sản Phẩm (YouTube)
+              <input
+                value={productForm.videoUrl}
+                onChange={(event) => updateProductField("videoUrl", event.target.value)}
+                placeholder="https://www.youtube.com/watch?v=... (video demo ngắn cho sản phẩm)"
+              />
+            </label>
+          )}
+
+          {!isGem && (
+            <label className="admin-span-all">
+              Link Video Hướng Dẫn Sử Dụng (YouTube)
               <input
                 value={productForm.tutorialUrl}
                 onChange={(event) => updateProductField("tutorialUrl", event.target.value)}
-                placeholder="https://www.youtube.com/watch?v=..."
+                placeholder="https://www.youtube.com/watch?v=... (hướng dẫn cài đặt/sử dụng)"
               />
             </label>
           )}

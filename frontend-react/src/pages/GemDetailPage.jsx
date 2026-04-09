@@ -5,8 +5,76 @@ import { useAuth } from "../lib/auth.jsx";
 
 function getYouTubeId(url) {
   if (!url) return null;
-  const match = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?]+)/);
+  const match =
+    url.match(/[?&]v=([^&]+)/) ||
+    url.match(/youtu\.be\/([^?]+)/) ||
+    url.match(/youtube\.com\/embed\/([^?]+)/);
   return match ? match[1] : null;
+}
+
+function YouTubePlayer({ url, label, accentColor }) {
+  const videoId = getYouTubeId(url);
+  const [playing, setPlaying] = useState(false);
+  const [thumbSrc, setThumbSrc] = useState(
+    `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+  );
+
+  if (!videoId) return null;
+
+  return (
+    <div className="yt-player-wrap">
+      {label && (
+        <div
+          className="yt-player-label"
+          style={{ borderLeftColor: accentColor || "var(--brand)" }}
+        >
+          {label}
+        </div>
+      )}
+      <div className="yt-player-frame">
+        {playing ? (
+          <iframe
+            className="yt-player-iframe"
+            src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`}
+            title={label || "YouTube Video"}
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        ) : (
+          <button
+            type="button"
+            className="yt-player-thumb-btn"
+            onClick={() => setPlaying(true)}
+            aria-label={`Phát video: ${label}`}
+          >
+            <img
+              src={thumbSrc}
+              alt={label || "Video thumbnail"}
+              className="yt-player-thumbnail"
+              onError={() =>
+                setThumbSrc(
+                  `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+                )
+              }
+            />
+            <div className="yt-player-overlay" />
+            <div className="yt-player-play-wrap">
+              <div
+                className="yt-player-play-btn"
+                style={{ background: accentColor || "var(--brand)" }}
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+              <span className="yt-player-play-hint">Nhấn để xem video</span>
+            </div>
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function GemDetailPage() {
@@ -55,20 +123,12 @@ export default function GemDetailPage() {
           <h1>{gem.title}</h1>
           <p>{gem.description}</p>
 
-          {getYouTubeId(gem.tutorialVideo) && (
-            <div style={{ marginTop: "2rem" }}>
-              <h3>Video Hướng Dẫn</h3>
-              <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, overflow: "hidden", borderRadius: "12px", border: "1px solid var(--line)", background: "#000", marginTop: "1rem" }}>
-                <iframe
-                  style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
-                  src={`https://www.youtube.com/embed/${getYouTubeId(gem.tutorialVideo)}`}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  title="YouTube video player"
-                />
-              </div>
-            </div>
+          {gem.tutorialVideo && (
+            <YouTubePlayer
+              url={gem.tutorialVideo}
+              label="🎓 Video Hướng Dẫn Sử Dụng"
+              accentColor="#133e95"
+            />
           )}
           
           {purchasedContent ? (

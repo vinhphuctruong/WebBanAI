@@ -7,6 +7,16 @@ import { useAuth } from "../lib/auth.jsx";
 const SALE_DURATION_MS = ((11 * 24 + 6) * 60 * 60 + 34 * 60 + 23) * 1000;
 const FALLBACK_IMAGE = "/tm-software-logo.svg";
 
+/* ─── YouTube helper ─────────────────────────────────────── */
+function getYouTubeId(url) {
+  if (!url) return null;
+  const match =
+    url.match(/[?&]v=([^&]+)/) ||
+    url.match(/youtu\.be\/([^?]+)/) ||
+    url.match(/youtube\.com\/embed\/([^?]+)/);
+  return match ? match[1] : null;
+}
+
 /* ─── helpers ────────────────────────────────────────────── */
 function normalizeCategory(value, fallback = "AI Video", withCaps = true) {
   if (!value) return fallback;
@@ -41,54 +51,89 @@ function GemCard({ item, isNew = false, typeBadge = "Chatbot AI", isFlash = fals
   const discount = discountPercent(item.price, item.originalPrice);
   const isPremium = Number(item.price || 0) > 150000;
   const isFree = Number(item.price || 0) === 0;
+  const youtubeId = getYouTubeId(item.videoUrl);
+  const [videoOpen, setVideoOpen] = useState(false);
 
   return (
     <div className="mlv-card-wrap">
       <article className="mlv-card">
-        {/* Image area */}
+        {/* Image / Video area */}
         <div className="mlv-card-img-wrap">
-          <img
-            src={item.image || FALLBACK_IMAGE}
-            alt={item.title}
-            className="mlv-card-img"
-            loading="lazy"
-          />
+          {videoOpen && youtubeId ? (
+            /* ── Inline YouTube player ── */
+            <div className="mlv-card-video-wrap">
+              <iframe
+                className="mlv-card-iframe"
+                src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0`}
+                title={item.title}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+              <button
+                className="mlv-card-video-close"
+                onClick={() => setVideoOpen(false)}
+                aria-label="Đóng video"
+                title="Đóng"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <>
+              <img
+                src={item.image || FALLBACK_IMAGE}
+                alt={item.title}
+                className="mlv-card-img"
+                loading="lazy"
+              />
 
-          {/* Top-left badges */}
-          <div className="mlv-card-badges-tl">
-            {isFlash && discount > 0 && (
-              <span className="mlv-badge mlv-badge-flash">
-                ⚡ -{discount}%
-              </span>
-            )}
-            {isPremium && (
-              <span className="mlv-badge mlv-badge-premium">
-                👑 Premium
-              </span>
-            )}
-            {isNew && (
-              <span className="mlv-badge mlv-badge-new">
-                ✨ Mới
-              </span>
-            )}
-            {isFree && (
-              <span className="mlv-badge mlv-badge-free">
-                🎁 Miễn phí
-              </span>
-            )}
-          </div>
+              {/* YouTube play button overlay */}
+              {youtubeId && (
+                <button
+                  className="mlv-card-play-btn"
+                  onClick={() => setVideoOpen(true)}
+                  aria-label="Xem video"
+                  title="Xem video demo"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="mlv-play-icon">
+                    <circle cx="12" cy="12" r="12" fill="rgba(0,0,0,0.45)" />
+                    <path d="M9.5 7.5v9l7-4.5-7-4.5z" fill="white" />
+                  </svg>
+                </button>
+              )}
+            </>
+          )}
 
-          {/* Top-right type badge */}
-          <div className="mlv-card-badge-tr">
-            <span className="mlv-type-badge">
-              💬 {typeBadge}
-            </span>
-          </div>
+          {/* Top-left badges – hide when video playing */}
+          {!videoOpen && (
+            <div className="mlv-card-badges-tl">
+              {isFlash && discount > 0 && (
+                <span className="mlv-badge mlv-badge-flash">⚡ -{discount}%</span>
+              )}
+              {isPremium && (
+                <span className="mlv-badge mlv-badge-premium">👑 Premium</span>
+              )}
+              {isNew && (
+                <span className="mlv-badge mlv-badge-new">✨ Mới</span>
+              )}
+              {isFree && (
+                <span className="mlv-badge mlv-badge-free">🎁 Miễn phí</span>
+              )}
+            </div>
+          )}
+
+          {/* Top-right type badge – hide when video playing */}
+          {!videoOpen && (
+            <div className="mlv-card-badge-tr">
+              <span className="mlv-type-badge">💬 {typeBadge}</span>
+            </div>
+          )}
 
           {/* Bookmark button */}
-          <button className="mlv-bookmark-btn" title="Lưu" aria-label="Lưu">
-            🔖
-          </button>
+          {!videoOpen && (
+            <button className="mlv-bookmark-btn" title="Lưu" aria-label="Lưu">🔖</button>
+          )}
         </div>
 
         {/* Card body */}
@@ -197,6 +242,7 @@ export default function HomePage() {
       soldCount: Number(gem.soldCount || 0),
       link: `/chatbotprompt/${gem.slug}`,
       isNew: gem.isNew || false,
+      videoUrl: gem.tutorialVideo || "",
     })),
     [data.gems]
   );
