@@ -11,6 +11,36 @@ function productLink(itemType, slug) {
   return `/${itemType === "gem" ? "chatbotprompt" : "ai-tool"}/${slug}`;
 }
 
+async function copyText(text) {
+  if (!text) return false;
+
+  if (window.isSecureContext && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.top = "-9999px";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  let copied = false;
+  try {
+    copied = document.execCommand("copy");
+  } catch (_err) {
+    copied = false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
+
+  return copied;
+}
+
 export default function PurchasedProductsPage() {
   const { user } = useAuth();
   const [purchases, setPurchases] = useState([]);
@@ -56,10 +86,14 @@ export default function PurchasedProductsPage() {
     const content = promptDetails[purchaseId]?.promptContent;
     if (!content) return;
     try {
-      await navigator.clipboard.writeText(content);
+      const copied = await copyText(content);
+      if (!copied) {
+        throw new Error("copy_failed");
+      }
       setInfo("Đã copy toàn bộ prompt");
+      setError("");
     } catch (_err) {
-      setError("Không thể copy prompt. Vui lòng thử lại.");
+      setError("Không thể copy prompt tự động. Hãy bôi đen nội dung prompt và copy thủ công.");
     }
   }
 
