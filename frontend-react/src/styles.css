@@ -102,13 +102,14 @@ p {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  background: linear-gradient(160deg, #051228, #041022 70%, #031024);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid #12345f;
+  box-shadow: 0 14px 30px rgba(1, 9, 24, 0.45);
 }
 
 .topbar-inner {
-  min-height: 78px;
+  min-height: 72px;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -118,9 +119,9 @@ p {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  color: var(--ink);
+  color: #eef4ff;
   font-weight: 800;
-  font-size: 1.2rem;
+  font-size: 1.7rem;
 }
 
 .brand:hover {
@@ -128,8 +129,8 @@ p {
 }
 
 .brand-logo {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   display: block;
   border-radius: 8px;
 }
@@ -142,25 +143,24 @@ p {
 }
 
 .menu a {
-  color: var(--muted);
-  padding: 0.42rem 0.68rem;
+  color: #88a1c5;
+  padding: 0.42rem 0.72rem;
   border-radius: 10px;
-  border: 1px dashed transparent;
+  border: 1px solid transparent;
   font-size: 0.92rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
 }
 
 .menu a:hover {
   text-decoration: none;
-  color: var(--ink);
+  color: #d7e6ff;
 }
 
 .menu a.active {
-  color: var(--brand);
-  border-color: color-mix(in srgb, var(--brand) 35%, transparent);
-  background: color-mix(in srgb, var(--brand) 9%, transparent);
+  color: #f4f9ff;
+  border-color: #1d4f84;
+  background: color-mix(in srgb, #2ea3ff 20%, #07172e 80%);
 }
 
 .actions {
@@ -187,32 +187,32 @@ p {
 }
 
 .btn-primary {
-  color: #fff;
-  background: linear-gradient(140deg, var(--brand), color-mix(in srgb, var(--brand) 60%, #1d5eff 40%));
-  box-shadow: 0 8px 16px color-mix(in srgb, var(--brand) 30%, transparent);
+  color: #02223a;
+  background: linear-gradient(120deg, #19b9ff, #67d7ff);
+  box-shadow: 0 8px 16px rgba(35, 175, 255, 0.28);
 }
 
 .btn-outline {
-  color: var(--ink);
-  border-color: var(--line);
-  background: var(--surface-raised);
+  color: #d6e6ff;
+  border-color: #245286;
+  background: #0a1c37;
 }
 
 .btn-soft {
-  color: var(--ink);
-  border-color: var(--line);
-  background: var(--surface-soft);
+  color: #dce9ff;
+  border-color: #2b5a8e;
+  background: #0b203f;
 }
 
 .btn-ghost {
-  color: var(--muted);
+  color: #9cb5d7;
   border-color: transparent;
   background: transparent;
 }
 
 .btn-ghost:hover {
-  color: var(--ink);
-  background: color-mix(in srgb, var(--surface-soft) 65%, transparent);
+  color: #e8f1ff;
+  background: #0a1f3c;
 }
 
 .theme-toggle {

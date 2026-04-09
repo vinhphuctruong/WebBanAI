@@ -34,7 +34,7 @@ export default function Layout({ children }) {
           <div className="container topbar-inner">
             <Link to="/" className="brand">
               <img src="/tm-software-logo.svg" alt="Logo TM software AI" className="brand-logo" />
-              <span>TM software AI</span>
+              <span>TM Software AI</span>
             </Link>
 
             <nav className="menu">
@@ -55,10 +55,7 @@ export default function Layout({ children }) {
                   <button className="btn btn-outline" onClick={handleLogout}>Đăng xuất</button>
                 </>
               ) : (
-                <>
-                  <Link className="btn btn-ghost" to="/auth">Đăng nhập</Link>
-                  <Link className="btn btn-primary" to="/auth?mode=register">Đăng ký</Link>
-                </>
+                <Link className="btn btn-primary" to="/auth">Đăng ký / Đăng nhập</Link>
               )}
             </div>
           </div>

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+﻿import { useEffect, useMemo, useState } from "react";
+import { Link, NavLink } from "react-router-dom";
 import { api, money } from "../lib/api.js";
 
 function categoryLabel(categoryId) {
@@ -9,6 +9,26 @@ function categoryLabel(categoryId) {
     .filter(Boolean)
     .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
     .join(" ");
+}
+
+const sortOptions = [
+  { id: "popular", label: "Phổ biến nhất" },
+  { id: "price-asc", label: "Giá thấp đến cao" },
+  { id: "price-desc", label: "Giá cao đến thấp" }
+];
+
+const quickLinks = [
+  { to: "/", label: "Trang chủ" },
+  { to: "/ai-tools", label: "Công cụ AI" },
+  { to: "/chatbotprompt", label: "Chatbot Prompt" },
+  { to: "/pricing", label: "Bảng giá" }
+];
+
+function discountPercent(currentPrice, originalPrice) {
+  const current = Number(currentPrice || 0);
+  const original = Number(originalPrice || 0);
+  if (current <= 0 || original <= current) return 0;
+  return Math.round(((original - current) / original) * 100);
 }
 
 export default function GemsPage() {
@@ -25,6 +45,7 @@ export default function GemsPage() {
   const categories = useMemo(() => {
     return ["all", ...new Set(items.map((item) => item.categoryId).filter(Boolean))];
   }, [items]);
+  const topCategories = useMemo(() => categories.slice(0, 8), [categories]);
 
   const visibleItems = useMemo(() => {
     const normalizedQuery = query.toLowerCase().trim();
@@ -48,78 +69,160 @@ export default function GemsPage() {
   if (error) return <p className="error">{error}</p>;
 
   return (
-    <section className="catalog-layout">
-      <aside className="card catalog-sidebar">
-        <p className="panel-label">DANH MỤC</p>
-        <div className="filter-group">
-          {categories.map((category) => (
+    <section className="tools-hub-shell">
+      <aside className="tools-hub-sidebar">
+        <div className="tools-side-brand">
+          <img src="/tm-software-logo.svg" alt="Logo TM software AI" />
+          <div>
+            <strong>TM Software AI</strong>
+            <span>Kho Prompt triển khai nhanh</span>
+          </div>
+        </div>
+
+        <div className="tools-side-group">
+          <p className="tools-side-label">Khám phá</p>
+          <nav className="tools-side-nav">
+            {quickLinks.map((link) => (
+              <NavLink key={link.to} to={link.to} className={({ isActive }) => `tools-side-link ${isActive ? "active" : ""}`} end={link.to === "/"}>
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+
+        <div className="tools-side-group">
+          <p className="tools-side-label">Danh mục Prompt</p>
+          <div className="tools-side-filter">
+            {categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                className={`tools-side-filter-btn ${activeCategory === category ? "active" : ""}`}
+                onClick={() => setActiveCategory(category)}
+              >
+                {category === "all" ? "Tất cả" : categoryLabel(category)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="tools-side-group">
+          <p className="tools-side-label">Sắp xếp</p>
+          <div className="tools-side-filter">
+            {sortOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`tools-side-filter-btn ${sortMode === option.id ? "active" : ""}`}
+                onClick={() => setSortMode(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </aside>
+
+      <div className="tools-hub-main">
+        <header className="tools-hub-hero">
+          <p className="tools-hero-kicker">Kho kịch bản và prompt bán hàng</p>
+          <h1>Chatbot Prompt Thực Chiến</h1>
+          <p>Chọn mẫu prompt tối ưu cho livestream, UGC, review sản phẩm và chăm sóc khách hàng bằng AI.</p>
+        </header>
+
+        <div className="tools-toolbar">
+          <label className="tools-search-box" aria-label="Tìm kiếm prompt chatbot">
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Tìm kiếm prompt..."
+            />
+          </label>
+          <div className="tools-sort-group">
+            {sortOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`tools-sort-pill ${sortMode === option.id ? "active" : ""}`}
+                onClick={() => setSortMode(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="tools-category-row">
+          {topCategories.map((category) => (
             <button
               key={category}
-              className={`filter-option ${activeCategory === category ? "active" : ""}`}
+              type="button"
+              className={`tools-category-pill ${activeCategory === category ? "active" : ""}`}
               onClick={() => setActiveCategory(category)}
             >
               {category === "all" ? "Tất cả" : categoryLabel(category)}
             </button>
           ))}
-        </div>
-
-        <p className="panel-label">TÌM KIẾM</p>
-        <input
-          className="search-input"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Tìm prompt..."
-        />
-
-        <p className="panel-label">SẮP XẾP GIÁ</p>
-        <div className="filter-group">
-          <button className={`filter-option ${sortMode === "popular" ? "active" : ""}`} onClick={() => setSortMode("popular")}>Phổ biến nhất</button>
-          <button className={`filter-option ${sortMode === "price-asc" ? "active" : ""}`} onClick={() => setSortMode("price-asc")}>Giá thấp đến cao</button>
-          <button className={`filter-option ${sortMode === "price-desc" ? "active" : ""}`} onClick={() => setSortMode("price-desc")}>Giá cao đến thấp</button>
-        </div>
-      </aside>
-
-      <div className="catalog-main stack">
-        <div className="catalog-head">
-          <div>
-            <h1>Kho Prompt AI</h1>
-            <p>Bộ sưu tập chatbot prompt và workflow thực chiến cho ecommerce và team nội dung.</p>
-          </div>
-          <div className="segmented">
-            <button className={sortMode === "popular" ? "active" : ""} onClick={() => setSortMode("popular")}>Phổ biến nhất</button>
-            <button className={sortMode === "price-asc" ? "active" : ""} onClick={() => setSortMode("price-asc")}>Giá thấp đến cao</button>
-            <button className={sortMode === "price-desc" ? "active" : ""} onClick={() => setSortMode("price-desc")}>Giá cao đến thấp</button>
-          </div>
+          <span className="tools-result-count">Hiển thị {visibleItems.length}/{items.length} prompt</span>
         </div>
 
         {visibleItems.length === 0 ? (
-          <article className="card empty-state">
+          <article className="tools-empty">
             <h3>Không tìm thấy prompt phù hợp</h3>
-            <p>Bạn thử đổi bộ lọc hoặc từ khóa tìm kiếm nhé.</p>
+            <p>Bạn thử đổi danh mục hoặc từ khóa tìm kiếm nhé.</p>
           </article>
         ) : (
-          <div className="grid">
-            {visibleItems.map((gem) => (
-              <Link
-                to={`/chatbotprompt/${gem.slug}`}
-                className="card-link"
-                aria-label={`Xem chi tiết ${gem.title}`}
-                key={gem.slug}
-              >
-                <article className="card card-clickable product-card">
-                  <div className="media-wrap">
-                    <img src={gem.thumbnail} alt={gem.title} className="thumb" />
-                    <span className="badge">{categoryLabel(gem.categoryId)}</span>
-                  </div>
-                  <h3>{gem.title}</h3>
-                  <p>{gem.description}</p>
-                  <div className="price-row">
-                    <strong>{gem.price === 0 ? "Miễn phí" : money(gem.price)}</strong>
-                    <span className="subtle-link">Nhấn để xem chi tiết</span>
-                  </div>
-                </article>
-              </Link>
-            ))}
+          <div className="tools-grid">
+            {visibleItems.map((gem) => {
+              const currentPrice = Number(gem.price || 0);
+              const originalPrice = Number(gem.originalPrice || 0);
+              const discount = discountPercent(currentPrice, originalPrice);
+              const features = [];
+              if (gem.productType) features.push(gem.productType.replace(/_/g, " "));
+              if (gem.tutorialVideo) features.push("Có video hướng dẫn");
+              if (gem.chatbotLink || gem.workflowLink) features.push("Có link triển khai");
+
+              return (
+                <Link
+                  to={`/chatbotprompt/${gem.slug}`}
+                  className="tools-card-link"
+                  aria-label={`Xem chi tiết ${gem.title}`}
+                  key={gem.slug}
+                >
+                  <article className="tools-card">
+                    <div className="tools-card-head">
+                      <img src={gem.thumbnail} alt={gem.title} className="tools-card-logo" />
+                      <div className="tools-card-title-wrap">
+                        <h3>{gem.title}</h3>
+                        <span className="tools-mini-pill">{categoryLabel(gem.categoryId)}</span>
+                      </div>
+                    </div>
+
+                    <p className="tools-card-desc">{gem.description}</p>
+
+                    <div className="tools-feature-row">
+                      {features.slice(0, 3).map((feature) => (
+                        <span key={feature} className="tools-feature-pill">{feature}</span>
+                      ))}
+                    </div>
+
+                    <div className="tools-card-foot">
+                      <div className="tools-price-wrap">
+                        {originalPrice > currentPrice && currentPrice > 0 && (
+                          <span className="tools-price-old">{money(originalPrice)}</span>
+                        )}
+                        <strong>{currentPrice === 0 ? "Miễn phí" : money(currentPrice)}</strong>
+                      </div>
+
+                      <div className="tools-foot-meta">
+                        {discount > 0 && <span className="tools-discount-badge">-{discount}%</span>}
+                        <span className="tools-stock">Prompt số</span>
+                      </div>
+                    </div>
+                  </article>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
