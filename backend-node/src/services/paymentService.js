@@ -85,7 +85,7 @@ export async function createPayment({ userId, itemType, slug, quantity = 1, cust
   const amount = unitPrice * qty;
   const orderId = uuidv4();
   const paymentId = uuidv4();
-  const paymentCode = `MLV${paymentId.replace(/-/g, "").slice(0, 10).toUpperCase()}`;
+  const paymentCode = `TMV${paymentId.replace(/-/g, "").slice(0, 10).toUpperCase()}`;
 
   const instruction = `Chuyen khoan ${env.payment.bankName} - STK ${env.payment.accountNumber} (${env.payment.accountName}), noi dung: ${paymentCode}`;
 
