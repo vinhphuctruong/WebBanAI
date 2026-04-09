@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api, money } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
@@ -203,7 +203,8 @@ function FreePromptCard({ item }) {
 
 /* ─── Main Page ──────────────────────────────────────────── */
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const saleDeadlineRef = useRef(Date.now() + SALE_DURATION_MS);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({ gems: [], tools: [], reviews: [] });
@@ -212,6 +213,14 @@ export default function HomePage() {
   const [activeGemCategory, setActiveGemCategory] = useState("all");
   const [countdown, setCountdown] = useState(() => toCountdown(saleDeadlineRef.current));
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  function confirmLogout() {
+    if (window.confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+      logout();
+      navigate("/auth");
+    }
+  }
 
   useEffect(() => {
     Promise.all([api("/catalog/gems"), api("/catalog/ai-tools"), api("/catalog/reviews")])
@@ -327,9 +336,36 @@ export default function HomePage() {
             )}
           </nav>
 
-          <Link to={user ? "/profile" : "/auth"} className="mlv-header-auth-btn">
-            {user ? user.name : "Đăng ký / Đăng nhập"}
-          </Link>
+          {user ? (
+            <div 
+              style={{ position: 'relative', display: 'inline-block' }}
+              onMouseEnter={() => setDropdownOpen(true)}
+              onMouseLeave={() => setDropdownOpen(false)}
+            >
+              <button className="mlv-header-auth-btn" style={{ background: 'var(--mlv-primary)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1.25rem', borderRadius: '99px', fontWeight: 700, fontSize: '0.9rem' }}>
+                👤 {user.name}
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              {dropdownOpen && (
+                <div style={{ 
+                  position: 'absolute', top: '100%', right: 0, 
+                  background: 'var(--surface-raised)', minWidth: '180px', 
+                  borderRadius: '8px', overflow: 'hidden', 
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.5)', 
+                  border: '1px solid var(--line)', zIndex: 100,
+                  marginTop: '0.5rem', display: 'flex', flexDirection: 'column'
+                }}>
+                  <Link to="/profile" className="mlv-dropdown-item" style={{ padding: '0.75rem 1rem', color: 'var(--ink)', textDecoration: 'none', fontSize: '0.9rem' }}>Thông tin tài khoản</Link>
+                  <div style={{ height: '1px', background: 'var(--line)' }} />
+                  <button onClick={confirmLogout} className="mlv-dropdown-item" style={{ padding: '0.75rem 1rem', color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '0.9rem', width: '100%' }}>Đăng xuất</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link to="/auth" className="mlv-header-auth-btn">
+              Đăng ký / Đăng nhập
+            </Link>
+          )}
         </div>
       </header>
 

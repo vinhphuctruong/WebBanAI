@@ -4162,3 +4162,6 @@ p {
     font-size: 0.875rem;
   }
 }
+
+.mlv-dropdown-item { transition: background 0.2s; }
+.mlv-dropdown-item:hover { background: var(--surface-soft) !important; }
