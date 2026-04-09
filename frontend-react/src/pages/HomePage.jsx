@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { api, money } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
@@ -203,8 +203,7 @@ function FreePromptCard({ item }) {
 
 /* ─── Main Page ──────────────────────────────────────────── */
 export default function HomePage() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const saleDeadlineRef = useRef(Date.now() + SALE_DURATION_MS);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({ gems: [], tools: [], reviews: [] });
@@ -212,15 +211,6 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
   const [activeGemCategory, setActiveGemCategory] = useState("all");
   const [countdown, setCountdown] = useState(() => toCountdown(saleDeadlineRef.current));
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  function confirmLogout() {
-    if (window.confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
-      logout();
-      navigate("/auth");
-    }
-  }
 
   useEffect(() => {
     Promise.all([api("/catalog/gems"), api("/catalog/ai-tools"), api("/catalog/reviews")])
@@ -295,322 +285,195 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="mlv-page">
-        <div className="mlv-loading">
-          <div className="mlv-loading-spinner" />
-          <p>Đang tải...</p>
-        </div>
+      <div className="mlv-loading">
+        <div className="mlv-loading-spinner" />
+        <p>Đang tải...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="mlv-page">
-        <p className="mlv-error">{error}</p>
-      </div>
+      <p className="mlv-error">{error}</p>
     );
   }
 
   return (
-    <div className="mlv-page">
-      {/* ── Top Header ── */}
-      <header className="mlv-header">
-        <div className="mlv-header-inner">
-          <Link to="/" className="mlv-header-brand">
-            <img src="/tm-software-logo.svg" alt="Mẫu Làm Video" className="mlv-header-logo" />
-            <span>Mẫu Làm<em>Video</em></span>
-          </Link>
-
-          <nav className="mlv-header-nav" aria-label="Navigation chính">
-            {[
-              { to: "/", label: "Trang chủ" },
-              { to: "/ai-tools", label: "Công cụ AI" },
-              { to: "/chatbotprompt", label: "Chatbot Prompt" },
-              { to: "/pricing", label: "Bảng giá" },
-            ].map(({ to, label }) => (
-              <Link key={to} to={to} className="mlv-header-link">{label}</Link>
-            ))}
-            {user?.role === "admin" && (
-              <Link to="/admin" className="mlv-header-link">Quản trị</Link>
-            )}
-          </nav>
-
-          {user ? (
-            <div 
-              style={{ position: 'relative', display: 'inline-block' }}
-              onMouseEnter={() => setDropdownOpen(true)}
-              onMouseLeave={() => setDropdownOpen(false)}
-            >
-              <button className="mlv-header-auth-btn" style={{ background: 'var(--mlv-primary)', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1.25rem', borderRadius: '99px', fontWeight: 700, fontSize: '0.9rem' }}>
-                👤 {user.name}
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-              </button>
-              {dropdownOpen && (
-                <div style={{ 
-                  position: 'absolute', top: '100%', right: 0, 
-                  background: 'var(--surface-raised)', minWidth: '180px', 
-                  borderRadius: '8px', overflow: 'hidden', 
-                  boxShadow: '0 8px 16px rgba(0,0,0,0.5)', 
-                  border: '1px solid var(--line)', zIndex: 100,
-                  marginTop: '0.5rem', display: 'flex', flexDirection: 'column'
-                }}>
-                  <Link to="/profile" className="mlv-dropdown-item" style={{ padding: '0.75rem 1rem', color: 'var(--ink)', textDecoration: 'none', fontSize: '0.9rem' }}>Thông tin tài khoản</Link>
-                  <div style={{ height: '1px', background: 'var(--line)' }} />
-                  <button onClick={confirmLogout} className="mlv-dropdown-item" style={{ padding: '0.75rem 1rem', color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '0.9rem', width: '100%' }}>Đăng xuất</button>
-                </div>
-              )}
+    <>
+      <section className="mlv-hero">
+        <div className="mlv-hero-inner">
+          <div className="mlv-hero-glow mlv-hero-glow-1" />
+          <div className="mlv-hero-glow mlv-hero-glow-2" />
+          <div className="mlv-hero-content">
+            <div className="mlv-hero-icon-wrap">
+              <span className="mlv-hero-icon">🎬</span>
             </div>
-          ) : (
-            <Link to="/auth" className="mlv-header-auth-btn">
-              Đăng ký / Đăng nhập
-            </Link>
-          )}
+            <div className="mlv-hero-text">
+              <span className="mlv-hero-kicker">✨ Dùng thử miễn phí</span>
+              <h1>AI hỗ trợ làm <span className="mlv-accent">video bán hàng</span> tốt nhất</h1>
+              <p>Tạo tài khoản và dùng thử ngay công cụ AI tạo video marketing chuyên nghiệp, nhanh chóng.</p>
+              <a
+                href="https://khoahocbigman.com/go/freetest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mlv-hero-cta"
+              >
+                Dùng thử ngay →
+              </a>
+            </div>
+          </div>
         </div>
-      </header>
+      </section>
 
-      {/* ── Shell: sidebar + main ── */}
-      <div className={`mlv-shell ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
+      <section className="mlv-section mlv-section-flash" id="flash-sale">
+        <div className="mlv-section-glow-red" />
+        <header className="mlv-section-head">
+          <div className="mlv-section-title-wrap">
+            <div className="mlv-section-icon mlv-icon-red">⚡</div>
+            <div>
+              <div className="mlv-section-title-row">
+                <h2>Flash <em>Sale</em></h2>
+                <span className="mlv-flash-badge">Giảm sốc</span>
+              </div>
+              <div className="mlv-section-subtitle-row">
+                <span className="mlv-muted-text">Ưu đãi có thời hạn</span>
+                <div className="mlv-countdown">
+                  🕐 <span className="mlv-countdown-digits">
+                    {countdown.days}d{" "}
+                    {countdown.hours}:{countdown.minutes}:{countdown.seconds}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <Link to="/chatbotprompt" className="mlv-see-all mlv-see-all-red">Xem tất cả →</Link>
+        </header>
 
-        {/* ── Sidebar ── */}
-        <aside className="mlv-sidebar" aria-label="Điều hướng sidebar">
-          <Link to="/" className="mlv-sidebar-brand">
-            <div className="mlv-sidebar-icon">✨</div>
-            <strong>AI Templates</strong>
+        {flashSaleItems.length === 0 ? (
+          <div className="mlv-empty">
+            <h3>Không tìm thấy sản phẩm</h3>
+            <p>Thử đổi danh mục hoặc từ khoá nhé.</p>
+          </div>
+        ) : (
+          <div className="mlv-grid">
+            {flashSaleItems.map((item) => (
+              <GemCard key={item.key} item={item} isNew isFlash typeBadge="Chatbot AI" />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="mlv-section" id="hot-chatbots">
+        <header className="mlv-section-head">
+          <div className="mlv-section-title-wrap">
+            <div className="mlv-section-icon mlv-icon-orange">🔥</div>
+            <div>
+              <h2>Chatbot <em>Hot</em></h2>
+              <p className="mlv-muted-text">Những chatbot được yêu thích nhất</p>
+            </div>
+          </div>
+          <Link to="/chatbotprompt" className="mlv-see-all">Xem tất cả →</Link>
+        </header>
+        <div className="mlv-grid">
+          {hotGems.map((item) => (
+            <GemCard key={item.key} item={item} isNew={item.isNew} typeBadge="Chatbot AI" />
+          ))}
+        </div>
+      </section>
+
+      <section className="mlv-section" id="free-prompts">
+        <header className="mlv-section-head">
+          <div className="mlv-section-title-wrap">
+            <div className="mlv-section-icon mlv-icon-primary">✨</div>
+            <div>
+              <div className="mlv-section-kicker-wrap">
+                <span className="mlv-kicker-pill">✨ Miễn phí</span>
+              </div>
+              <h2>Thư viện <em>Prompt</em> miễn phí</h2>
+              <p className="mlv-muted-text">Sao chép và sử dụng ngay với ChatGPT, Claude, Gemini và các công cụ AI khác</p>
+            </div>
+          </div>
+          <Link to="/chatbotprompt" className="mlv-see-all">Xem kho prompt →</Link>
+        </header>
+        <div className="mlv-prompt-grid">
+          {freePromptItems.map((item) => (
+            <FreePromptCard key={`free-${item.key}`} item={item} />
+          ))}
+        </div>
+        <div className="mlv-center-btn-row">
+          <Link to="/chatbotprompt" className="mlv-outline-btn">
+            Xem tất cả Prompt miễn phí →
           </Link>
+        </div>
+      </section>
 
-          <nav>
-            <p className="mlv-sidebar-group-label">Khám phá</p>
-            <div className="mlv-sidebar-group">
-              <Link to="/" className="mlv-sidebar-link active">🏠 Trang chủ</Link>
-              <Link to="/ai-tools" className="mlv-sidebar-link">🖥️ Công cụ AI</Link>
-              <a href="#reviews" className="mlv-sidebar-link">✨ Review AI</a>
-              <Link to="/chatbotprompt" className="mlv-sidebar-link">💬 Chatbot Prompt</Link>
-              <a href="#free-prompts" className="mlv-sidebar-link">📄 Prompt miễn phí</a>
-              <a href="#main-gems" className="mlv-sidebar-link">⚙️ VEO3 Workflow</a>
+      <section className="mlv-section" id="main-gems">
+        <header className="mlv-section-head">
+          <div className="mlv-section-title-wrap">
+            <div className="mlv-section-icon mlv-icon-primary">💬</div>
+            <div>
+              <h2>Chatbot <em>Prompt</em></h2>
+              <p className="mlv-muted-text">Công cụ AI giúp bạn viết prompt chuyên nghiệp</p>
             </div>
+          </div>
+          <Link to="/chatbotprompt" className="mlv-see-all">Xem tất cả →</Link>
+        </header>
 
-            <p className="mlv-sidebar-group-label">Khác</p>
-            <div className="mlv-sidebar-group">
-              <Link to="/chatbotprompt" className="mlv-sidebar-link">🪄 Custom Chatbot</Link>
-              <Link to="/pricing" className="mlv-sidebar-link">💳 Bảng giá</Link>
+        <div className="mlv-filter-bar">
+          <label className="mlv-search-label" aria-label="Tìm chatbot">
+            🔍
+            <input
+              className="mlv-search-input"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Tìm chatbot hoặc prompt..."
+            />
+          </label>
+          <div className="mlv-category-pills">
+            {gemCategories.slice(0, 6).map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                className={`mlv-cat-pill ${activeGemCategory === cat ? "active" : ""}`}
+                onClick={() => setActiveGemCategory(cat)}
+              >
+                {cat === "all" ? "Tất cả" : normalizeCategory(cat)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mlv-grid mlv-grid-3">
+          {mainGemItems.map((item) => (
+            <GemCard key={item.key} item={item} isNew={item.isNew} typeBadge="Chatbot AI" />
+          ))}
+        </div>
+      </section>
+
+      <section className="mlv-section mlv-cta-section" id="about">
+        <div className="mlv-cta-inner">
+          <div className="mlv-cta-glow" />
+          <h2>Tham gia cộng đồng <span className="mlv-accent">AI Creator</span></h2>
+          <p>Hơn {data.gems.length}+ chatbot template, {data.tools.length}+ AI tools đang chờ bạn khám phá.</p>
+          <div className="mlv-cta-stats">
+            <div className="mlv-stat">
+              <strong>{data.gems.length}+</strong>
+              <span>Chatbot templates</span>
             </div>
-
-            {gemCategories.length > 1 && (
-              <>
-                <p className="mlv-sidebar-group-label">Danh mục</p>
-                <div className="mlv-sidebar-group">
-                  {gemCategories.slice(0, 7).map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      className={`mlv-sidebar-link mlv-sidebar-btn ${activeGemCategory === cat ? "active" : ""}`}
-                      onClick={() => setActiveGemCategory(cat)}
-                    >
-                      {cat === "all" ? "🗂️ Tất cả" : normalizeCategory(cat)}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </nav>
-
-          <button
-            className="mlv-sidebar-collapse"
-            onClick={() => setSidebarOpen((v) => !v)}
-            aria-label="Thu nhỏ sidebar"
-          >
-            {sidebarOpen ? "◀ Thu nhỏ" : "▶"}
-          </button>
-        </aside>
-
-        {/* ── Main content ── */}
-        <main className="mlv-main">
-
-          {/* ── Hero banner ── */}
-          <section className="mlv-hero">
-            <div className="mlv-hero-inner">
-              <div className="mlv-hero-glow mlv-hero-glow-1" />
-              <div className="mlv-hero-glow mlv-hero-glow-2" />
-              <div className="mlv-hero-content">
-                <div className="mlv-hero-icon-wrap">
-                  <span className="mlv-hero-icon">🎬</span>
-                </div>
-                <div className="mlv-hero-text">
-                  <span className="mlv-hero-kicker">✨ Dùng thử miễn phí</span>
-                  <h1>AI hỗ trợ làm <span className="mlv-accent">video bán hàng</span> tốt nhất</h1>
-                  <p>Tạo tài khoản và dùng thử ngay công cụ AI tạo video marketing chuyên nghiệp, nhanh chóng.</p>
-                  <a
-                    href="https://khoahocbigman.com/go/freetest"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mlv-hero-cta"
-                  >
-                    Dùng thử ngay →
-                  </a>
-                </div>
-              </div>
+            <div className="mlv-stat">
+              <strong>{data.tools.length}+</strong>
+              <span>AI Tools</span>
             </div>
-          </section>
-
-          {/* ── Flash Sale ── */}
-          <section className="mlv-section mlv-section-flash" id="flash-sale">
-            <div className="mlv-section-glow-red" />
-            <header className="mlv-section-head">
-              <div className="mlv-section-title-wrap">
-                <div className="mlv-section-icon mlv-icon-red">⚡</div>
-                <div>
-                  <div className="mlv-section-title-row">
-                    <h2>Flash <em>Sale</em></h2>
-                    <span className="mlv-flash-badge">Giảm sốc</span>
-                  </div>
-                  <div className="mlv-section-subtitle-row">
-                    <span className="mlv-muted-text">Ưu đãi có thời hạn</span>
-                    <div className="mlv-countdown">
-                      🕐 <span className="mlv-countdown-digits">
-                        {countdown.days}d{" "}
-                        {countdown.hours}:{countdown.minutes}:{countdown.seconds}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <Link to="/chatbotprompt" className="mlv-see-all mlv-see-all-red">Xem tất cả →</Link>
-            </header>
-
-            {flashSaleItems.length === 0 ? (
-              <div className="mlv-empty">
-                <h3>Không tìm thấy sản phẩm</h3>
-                <p>Thử đổi danh mục hoặc từ khoá nhé.</p>
-              </div>
-            ) : (
-              <div className="mlv-grid">
-                {flashSaleItems.map((item) => (
-                  <GemCard key={item.key} item={item} isNew isFlash typeBadge="Chatbot AI" />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* ── Hot Chatbots ── */}
-          <section className="mlv-section" id="hot-chatbots">
-            <header className="mlv-section-head">
-              <div className="mlv-section-title-wrap">
-                <div className="mlv-section-icon mlv-icon-orange">🔥</div>
-                <div>
-                  <h2>Chatbot <em>Hot</em></h2>
-                  <p className="mlv-muted-text">Những chatbot được yêu thích nhất</p>
-                </div>
-              </div>
-              <Link to="/chatbotprompt" className="mlv-see-all">Xem tất cả →</Link>
-            </header>
-            <div className="mlv-grid">
-              {hotGems.map((item) => (
-                <GemCard key={item.key} item={item} isNew={item.isNew} typeBadge="Chatbot AI" />
-              ))}
+            <div className="mlv-stat">
+              <strong>{data.reviews.length}+</strong>
+              <span>Bài review</span>
             </div>
-          </section>
-
-          {/* ── Free Prompts ── */}
-          <section className="mlv-section" id="free-prompts">
-            <header className="mlv-section-head">
-              <div className="mlv-section-title-wrap">
-                <div className="mlv-section-icon mlv-icon-primary">✨</div>
-                <div>
-                  <div className="mlv-section-kicker-wrap">
-                    <span className="mlv-kicker-pill">✨ Miễn phí</span>
-                  </div>
-                  <h2>Thư viện <em>Prompt</em> miễn phí</h2>
-                  <p className="mlv-muted-text">Sao chép và sử dụng ngay với ChatGPT, Claude, Gemini và các công cụ AI khác</p>
-                </div>
-              </div>
-              <Link to="/chatbotprompt" className="mlv-see-all">Xem kho prompt →</Link>
-            </header>
-            <div className="mlv-prompt-grid">
-              {freePromptItems.map((item) => (
-                <FreePromptCard key={`free-${item.key}`} item={item} />
-              ))}
-            </div>
-            <div className="mlv-center-btn-row">
-              <Link to="/chatbotprompt" className="mlv-outline-btn">
-                Xem tất cả Prompt miễn phí →
-              </Link>
-            </div>
-          </section>
-
-          {/* ── Main Chatbot Section ── */}
-          <section className="mlv-section" id="main-gems">
-            <header className="mlv-section-head">
-              <div className="mlv-section-title-wrap">
-                <div className="mlv-section-icon mlv-icon-primary">💬</div>
-                <div>
-                  <h2>Chatbot <em>Prompt</em></h2>
-                  <p className="mlv-muted-text">Công cụ AI giúp bạn viết prompt chuyên nghiệp</p>
-                </div>
-              </div>
-              <Link to="/chatbotprompt" className="mlv-see-all">Xem tất cả →</Link>
-            </header>
-
-            {/* Search + Category filter */}
-            <div className="mlv-filter-bar">
-              <label className="mlv-search-label" aria-label="Tìm chatbot">
-                🔍
-                <input
-                  className="mlv-search-input"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Tìm chatbot hoặc prompt..."
-                />
-              </label>
-              <div className="mlv-category-pills">
-                {gemCategories.slice(0, 6).map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    className={`mlv-cat-pill ${activeGemCategory === cat ? "active" : ""}`}
-                    onClick={() => setActiveGemCategory(cat)}
-                  >
-                    {cat === "all" ? "Tất cả" : normalizeCategory(cat)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mlv-grid mlv-grid-3">
-              {mainGemItems.map((item) => (
-                <GemCard key={item.key} item={item} isNew={item.isNew} typeBadge="Chatbot AI" />
-              ))}
-            </div>
-          </section>
-
-          {/* ── Stats + CTA footer ── */}
-          <section className="mlv-section mlv-cta-section" id="about">
-            <div className="mlv-cta-inner">
-              <div className="mlv-cta-glow" />
-              <h2>Tham gia cộng đồng <span className="mlv-accent">AI Creator</span></h2>
-              <p>Hơn {data.gems.length}+ chatbot template, {data.tools.length}+ AI tools đang chờ bạn khám phá.</p>
-              <div className="mlv-cta-stats">
-                <div className="mlv-stat">
-                  <strong>{data.gems.length}+</strong>
-                  <span>Chatbot templates</span>
-                </div>
-                <div className="mlv-stat">
-                  <strong>{data.tools.length}+</strong>
-                  <span>AI Tools</span>
-                </div>
-                <div className="mlv-stat">
-                  <strong>{data.reviews.length}+</strong>
-                  <span>Bài review</span>
-                </div>
-              </div>
-              <Link to={user ? "/profile" : "/auth"} className="mlv-hero-cta">
-                {user ? "Vào trang cá nhân" : "Đăng ký miễn phí"}
-              </Link>
-            </div>
-          </section>
-
-        </main>
-      </div>
-    </div>
+          </div>
+          <Link to={user ? "/profile" : "/auth"} className="mlv-hero-cta">
+            {user ? "Vào trang cá nhân" : "Đăng ký miễn phí"}
+          </Link>
+        </div>
+      </section>
+    </>
   );
 }
