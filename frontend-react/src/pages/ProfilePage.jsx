@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { api, money } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
@@ -11,6 +11,10 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [purchaseDetails, setPurchaseDetails] = useState({});
+  const [expandedPromptRows, setExpandedPromptRows] = useState({});
+  const [loadingPromptRows, setLoadingPromptRows] = useState({});
+  const [promptRowErrors, setPromptRowErrors] = useState({});
 
   useEffect(() => {
     if (!user) return;
@@ -53,6 +57,36 @@ export default function ProfilePage() {
     }
   }
 
+  async function togglePromptView(purchase) {
+    const rowKey = purchase.id;
+    const nextExpanded = !expandedPromptRows[rowKey];
+    setExpandedPromptRows((prev) => ({ ...prev, [rowKey]: nextExpanded }));
+    if (!nextExpanded || purchaseDetails[rowKey] || loadingPromptRows[rowKey]) return;
+
+    setLoadingPromptRows((prev) => ({ ...prev, [rowKey]: true }));
+    setPromptRowErrors((prev) => ({ ...prev, [rowKey]: "" }));
+    try {
+      const detail = await api(`/profile/purchases/gems/${purchase.item_slug}`);
+      setPurchaseDetails((prev) => ({ ...prev, [rowKey]: detail }));
+    } catch (err) {
+      setPromptRowErrors((prev) => ({ ...prev, [rowKey]: err.message || "Khong tai duoc noi dung prompt" }));
+    } finally {
+      setLoadingPromptRows((prev) => ({ ...prev, [rowKey]: false }));
+    }
+  }
+
+  async function copyPrompt(rowKey) {
+    const content = purchaseDetails[rowKey]?.promptContent;
+    if (!content) return;
+
+    try {
+      await navigator.clipboard.writeText(content);
+      setInfo("Đã copy toàn bộ prompt thành công");
+    } catch (_err) {
+      setError("Không thể copy prompt. Vui lòng thử lại.");
+    }
+  }
+
   return (
     <section className="stack">
       <h1>Trang cá nhân</h1>
@@ -68,7 +102,7 @@ export default function ProfilePage() {
       </article>
 
       <article className="card">
-        <h2>Sản phẩm đã sở hữu</h2>
+        <h2>Sản phẩm đã mua</h2>
         {purchases.length === 0 ? (
           <p>Bạn chưa mua sản phẩm nào.</p>
         ) : (
@@ -83,21 +117,97 @@ export default function ProfilePage() {
                 </tr>
               </thead>
               <tbody>
-                {purchases.map(p => (
-                  <tr key={p.id}>
-                    <td>{new Date(p.created_at).toLocaleDateString("vi-VN")}</td>
-                    <td>{p.title}</td>
-                    <td>{p.item_type === "gem" ? "Prompt" : "AI Tool"}</td>
-                    <td>
-                      <Link
-                        to={`/${p.item_type === "gem" ? "chatbotprompt" : "ai-tool"}/${p.item_slug}`}
-                        className="btn btn-outline"
-                      >
-                        Xem Nội dung
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {purchases.map((p) => {
+                  const rowKey = p.id;
+                  const isGem = p.item_type === "gem";
+                  const isExpanded = Boolean(expandedPromptRows[rowKey]);
+                  const isLoading = Boolean(loadingPromptRows[rowKey]);
+                  const rowError = promptRowErrors[rowKey];
+                  const rowDetail = purchaseDetails[rowKey];
+
+                  return (
+                    <Fragment key={p.id}>
+                      <tr>
+                        <td>{new Date(p.created_at).toLocaleDateString("vi-VN")}</td>
+                        <td>{p.title}</td>
+                        <td>{isGem ? "Prompt" : "AI Tool"}</td>
+                        <td style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                          <Link
+                            to={`/${isGem ? "chatbotprompt" : "ai-tool"}/${p.item_slug}`}
+                            className="btn btn-outline"
+                          >
+                            Xem sản phẩm
+                          </Link>
+                          {isGem && (
+                            <button
+                              type="button"
+                              className="btn btn-soft"
+                              onClick={() => togglePromptView(p)}
+                              disabled={isLoading}
+                            >
+                              {isLoading ? "Đang tải..." : isExpanded ? "Ẩn Prompt" : "Hiện Prompt"}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+
+                      {isGem && isExpanded && (
+                        <tr>
+                          <td colSpan={4}>
+                            <div
+                              style={{
+                                border: "1px solid var(--line)",
+                                borderRadius: "10px",
+                                background: "var(--surface-soft)",
+                                padding: "0.9rem",
+                                display: "grid",
+                                gap: "0.75rem"
+                              }}
+                            >
+                              {rowError && <p className="error">{rowError}</p>}
+                              {!rowError && isLoading && <p>Đang tải nội dung prompt...</p>}
+
+                              {!rowError && !isLoading && rowDetail?.promptInstruction && (
+                                <div>
+                                  <p><strong>Hướng dẫn sử dụng:</strong></p>
+                                  <p style={{ whiteSpace: "pre-wrap", color: "var(--ink)" }}>{rowDetail.promptInstruction}</p>
+                                </div>
+                              )}
+
+                              {!rowError && !isLoading && rowDetail?.promptContent && (
+                                <div style={{ display: "grid", gap: "0.5rem" }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem" }}>
+                                    <p><strong>Nội dung Prompt:</strong></p>
+                                    <button
+                                      type="button"
+                                      className="btn btn-primary"
+                                      onClick={() => copyPrompt(rowKey)}
+                                    >
+                                      Copy toàn bộ Prompt
+                                    </button>
+                                  </div>
+                                  <pre
+                                    style={{
+                                      margin: 0,
+                                      whiteSpace: "pre-wrap",
+                                      background: "var(--surface-raised)",
+                                      color: "var(--ink)",
+                                      border: "1px solid var(--line)",
+                                      borderRadius: "8px",
+                                      padding: "0.85rem"
+                                    }}
+                                  >
+                                    {rowDetail.promptContent}
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
