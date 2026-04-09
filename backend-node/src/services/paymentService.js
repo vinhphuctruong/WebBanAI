@@ -37,8 +37,38 @@ async function loadProduct(type, slug) {
   return null;
 }
 
+function normalizeContactValue(value) {
+  return String(value ?? "").trim();
+}
+
+function validateCustomerContact({ customerName, customerPhone, customerEmail }) {
+  const name = normalizeContactValue(customerName);
+  const phone = normalizeContactValue(customerPhone);
+  const email = normalizeContactValue(customerEmail);
+
+  if (!name || !phone || !email) {
+    throw new Error("Vui long nhap day du ho ten, so dien thoai co Zalo va email");
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error("Email khong hop le");
+  }
+
+  const phoneDigits = phone.replace(/\D/g, "");
+  if (phoneDigits.length < 8) {
+    throw new Error("So dien thoai khong hop le");
+  }
+
+  return {
+    name,
+    phone,
+    email
+  };
+}
+
 export async function createPayment({ userId, itemType, slug, quantity = 1, customerName = null, customerPhone = null, customerEmail = null }) {
   await ensureOrderContactColumns();
+  const contact = validateCustomerContact({ customerName, customerPhone, customerEmail });
 
   const normalizedType = itemType === "ai" ? "ai_tool" : itemType;
   const product = await loadProduct(normalizedType, slug);
@@ -63,7 +93,7 @@ export async function createPayment({ userId, itemType, slug, quantity = 1, cust
     await client.query(
       `INSERT INTO orders (id, user_id, item_type, item_slug, title, amount, status, customer_name, customer_phone, customer_email)
        VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, $8, $9)`,
-      [orderId, userId, normalizedType, slug, product.title || product.name, amount, customerName, customerPhone, customerEmail]
+      [orderId, userId, normalizedType, slug, product.title || product.name, amount, contact.name, contact.phone, contact.email]
     );
 
     await client.query(

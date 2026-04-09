@@ -3,6 +3,29 @@ import { Navigate, useParams, Link } from "react-router-dom";
 import { api, money } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
+function buildDetailLink(itemType, slug) {
+  if (itemType === "gem") return `/chatbotprompt/${slug}`;
+  return `/ai-tool/${slug}`;
+}
+
+function validateContactForm(contactForm) {
+  const name = String(contactForm.name || "").trim();
+  const phone = String(contactForm.phone || "").trim();
+  const email = String(contactForm.email || "").trim();
+
+  if (!name || !phone || !email) {
+    return "Vui lòng nhập đầy đủ họ tên, số điện thoại có Zalo và email.";
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return "Email chưa đúng định dạng.";
+  }
+  const phoneDigits = phone.replace(/\D/g, "");
+  if (phoneDigits.length < 8) {
+    return "Số điện thoại chưa hợp lệ.";
+  }
+  return "";
+}
+
 export default function PayPage() {
   const { itemType, slug } = useParams();
   const { user } = useAuth();
@@ -19,6 +42,16 @@ export default function PayPage() {
     phone: user?.phone || "",
     email: user?.email || ""
   });
+  const detailLink = buildDetailLink(itemType, slug);
+
+  useEffect(() => {
+    if (!user) return;
+    setContactForm((prev) => ({
+      name: prev.name || user?.name || "",
+      phone: prev.phone || user?.phone || "",
+      email: prev.email || user?.email || ""
+    }));
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -31,10 +64,8 @@ export default function PayPage() {
         if (res.exists) {
           setExistingPayment(res);
           setStep("prompt");
-        } else if (itemType === "ai") {
-          setStep("contact");
         } else {
-          startNewPayment();
+          setStep("contact");
         }
       })
       .catch((err) => {
@@ -44,11 +75,14 @@ export default function PayPage() {
   }, [user, itemType, slug]);
 
   function startNewPayment() {
-    if (itemType === "ai" && (!contactForm.name || !contactForm.phone || !contactForm.email)) {
-      setError("Vui lòng điền đầy đủ thông tin để Admin liên hệ giao tài khoản.");
+    const validationError = validateContactForm(contactForm);
+    if (validationError) {
+      setError(validationError);
+      setStep("contact");
       return;
     }
 
+    setError("");
     setStep("creating");
     api("/payments/create", {
       method: "POST",
@@ -110,7 +144,7 @@ export default function PayPage() {
             <button className="btn btn-primary" onClick={loadExistingPayment}>
               Xem lại hoá đơn cũ đó
             </button>
-            <button className="btn btn-outline" onClick={startNewPayment}>
+            <button className="btn btn-outline" onClick={() => { setError(""); setStep("contact"); }}>
               Mua thêm
             </button>
             <Link to="/" className="btn btn-ghost">
@@ -126,9 +160,9 @@ export default function PayPage() {
     return (
       <section className="stack">
         <div className="card" style={{ maxWidth: 500, margin: "2rem auto", padding: "2rem" }}>
-          <h2 style={{ marginBottom: "1rem", textAlign: "center" }}>Thông tin nhận tài khoản</h2>
+          <h2 style={{ marginBottom: "1rem", textAlign: "center" }}>Thông tin liên hệ người mua</h2>
           <p style={{ marginBottom: "1.5rem", fontSize: "0.95rem", color: "var(--ink-soft)", textAlign: "center" }}>
-            Admin sẽ liên hệ với bạn qua các thông tin này để bàn giao tài khoản AI sau khi bạn thanh toán thành công.
+            Vui lòng nhập đúng thông tin để admin liên hệ xác nhận đơn và hỗ trợ bàn giao nhanh hơn.
           </p>
           
           {error && <p className="error">{error}</p>}
@@ -153,7 +187,7 @@ export default function PayPage() {
               />
             </label>
             <label>
-              Gmail nhận tài khoản
+              Email liên hệ
               <input 
                 type="email" 
                 value={contactForm.email} 
@@ -165,7 +199,7 @@ export default function PayPage() {
             <button className="btn btn-primary" onClick={startNewPayment} style={{ marginTop: "1rem" }}>
               Tiếp tục thanh toán
             </button>
-            <Link to={`/ai-tool/${slug}`} className="btn btn-ghost" style={{ textAlign: "center" }}>
+            <Link to={detailLink} className="btn btn-ghost" style={{ textAlign: "center" }}>
               Hủy bỏ
             </Link>
           </div>
