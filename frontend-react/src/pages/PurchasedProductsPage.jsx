@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
-import { api, money } from "../lib/api.js";
+import { api } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
 function formatPurchaseType(itemType) {
@@ -13,6 +13,43 @@ function productLink(itemType, slug) {
 
 function isPromptItem(itemType) {
   return ["gem", "chatbotprompt", "chatbot_prompt", "prompt"].includes(String(itemType || "").toLowerCase());
+}
+
+function normalizePurchaseType(itemType) {
+  return isPromptItem(itemType) ? "gem" : "ai_tool";
+}
+
+function purchaseKey(itemType, slug) {
+  return `${normalizePurchaseType(itemType)}:${slug}`;
+}
+
+function getYouTubeId(url) {
+  if (!url) return null;
+  const match =
+    url.match(/[?&]v=([^&]+)/) ||
+    url.match(/youtu\.be\/([^?]+)/) ||
+    url.match(/youtube\.com\/embed\/([^?]+)/);
+  return match ? match[1] : null;
+}
+
+function extractPublicProduct(itemType, fallbackTitle, payload) {
+  if (!payload) return null;
+
+  if (itemType === "gem") {
+    return {
+      title: payload.title || fallbackTitle || "Prompt",
+      description: payload.description || "",
+      image: payload.thumbnail || "/tm-aivideo-logo.jpg",
+      videoUrl: payload.tutorialVideo || ""
+    };
+  }
+
+  return {
+    title: payload.name || fallbackTitle || "AI Tool",
+    description: payload.description || "",
+    image: payload.logo || "/tm-aivideo-logo.jpg",
+    videoUrl: payload.videoUrl || payload.tutorialUrl || ""
+  };
 }
 
 async function copyText(text) {
@@ -55,12 +92,15 @@ export default function PurchasedProductsPage() {
   const { user } = useAuth();
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPublic, setLoadingPublic] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [promptDetails, setPromptDetails] = useState({});
   const [promptOpenRows, setPromptOpenRows] = useState({});
   const [promptLoadingRows, setPromptLoadingRows] = useState({});
   const [promptErrors, setPromptErrors] = useState({});
+  const [publicProducts, setPublicProducts] = useState({});
+  const [videoOpenRows, setVideoOpenRows] = useState({});
 
   useEffect(() => {
     if (!user) return;
@@ -70,6 +110,51 @@ export default function PurchasedProductsPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [user]);
+
+  useEffect(() => {
+    if (!user || purchases.length === 0) return;
+
+    const uniquePurchases = Array.from(
+      new Map(
+        purchases.map((purchase) => [purchaseKey(purchase.item_type, purchase.item_slug), purchase])
+      ).values()
+    );
+
+    let cancelled = false;
+    setLoadingPublic(true);
+
+    Promise.all(
+      uniquePurchases.map(async (purchase) => {
+        const normalizedType = normalizePurchaseType(purchase.item_type);
+        const key = purchaseKey(purchase.item_type, purchase.item_slug);
+        const path = normalizedType === "gem"
+          ? `/catalog/gems/${purchase.item_slug}`
+          : `/catalog/ai-tools/${purchase.item_slug}`;
+
+        try {
+          const payload = await api(path);
+          return [key, extractPublicProduct(normalizedType, purchase.title, payload)];
+        } catch (_err) {
+          return [key, null];
+        }
+      })
+    )
+      .then((entries) => {
+        if (cancelled) return;
+        const next = {};
+        entries.forEach(([key, detail]) => {
+          if (detail) next[key] = detail;
+        });
+        setPublicProducts((prev) => ({ ...prev, ...next }));
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingPublic(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, purchases]);
 
   if (!user) return <Navigate to="/auth" replace />;
 
@@ -112,6 +197,7 @@ export default function PurchasedProductsPage() {
       <h1>Sản phẩm đã mua</h1>
       {error && <p className="error">{error}</p>}
       {info && <p className="success">{info}</p>}
+      {loadingPublic && <p>Đang tải thông tin công khai của sản phẩm...</p>}
 
       {loading ? (
         <p>Đang tải sản phẩm đã mua...</p>
@@ -123,22 +209,69 @@ export default function PurchasedProductsPage() {
       ) : (
         <div className="grid two-cols">
           {purchases.map((purchase) => {
-            const isGem = isPromptItem(purchase.item_type);
+            const normalizedType = normalizePurchaseType(purchase.item_type);
+            const isGem = normalizedType === "gem";
             const rowId = purchase.id;
             const isPromptOpen = Boolean(promptOpenRows[rowId]);
             const isPromptLoading = Boolean(promptLoadingRows[rowId]);
             const promptError = promptErrors[rowId];
             const promptDetail = promptDetails[rowId];
+            const publicDetail = publicProducts[purchaseKey(purchase.item_type, purchase.item_slug)];
+            const imageUrl = publicDetail?.image || "/tm-aivideo-logo.jpg";
+            const title = publicDetail?.title || purchase.title;
+            const description = publicDetail?.description;
+            const videoUrl = publicDetail?.videoUrl || "";
+            const youtubeId = getYouTubeId(videoUrl);
+            const isVideoOpen = Boolean(videoOpenRows[rowId]);
 
             return (
               <article key={purchase.id} className="card">
+                <img
+                  src={imageUrl}
+                  alt={title}
+                  style={{
+                    width: "100%",
+                    aspectRatio: "16 / 9",
+                    objectFit: "cover",
+                    borderRadius: "12px",
+                    border: "1px solid var(--line)"
+                  }}
+                />
+
                 <div className="row-head" style={{ marginBottom: 0 }}>
-                  <h3>{purchase.title}</h3>
+                  <h3>{title}</h3>
                   <span className="tag">{formatPurchaseType(purchase.item_type)}</span>
                 </div>
 
+                {description && <p>{description}</p>}
                 <p><strong>Ngày mua:</strong> {new Date(purchase.created_at).toLocaleDateString("vi-VN")}</p>
-                <p><strong>Giá:</strong> {money(purchase.amount || 0)}</p>
+
+                {youtubeId && (
+                  <div style={{ display: "grid", gap: "0.5rem" }}>
+                    <button
+                      type="button"
+                      className="btn btn-soft"
+                      onClick={() => setVideoOpenRows((prev) => ({ ...prev, [rowId]: !prev[rowId] }))}
+                    >
+                      {isVideoOpen ? "Ẩn video" : "Hiện video"}
+                    </button>
+                    {isVideoOpen && (
+                      <iframe
+                        src={`https://www.youtube.com/embed/${youtubeId}?rel=0`}
+                        title={`Video ${title}`}
+                        style={{
+                          width: "100%",
+                          aspectRatio: "16 / 9",
+                          border: "1px solid var(--line)",
+                          borderRadius: "10px",
+                          background: "#000"
+                        }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    )}
+                  </div>
+                )}
 
                 <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
                   <Link to={productLink(purchase.item_type, purchase.item_slug)} className="btn btn-outline">
