@@ -75,160 +75,119 @@ export default function ToolsPage() {
   if (error) return <p className="error">{error}</p>;
 
   return (
-    <section className="tools-hub-shell">
-      <aside className="tools-hub-sidebar">
-        <div className="tools-side-brand">
-          <img src="/tm-software-logo.svg" alt="Logo TM software AI" />
-          <div>
-            <strong>TM software AI</strong>
-            <span>Kho tài nguyên AI thực chiến</span>
+    <div className="vt-page">
+      <div className="vt-header">
+        <div className="vt-header-title-flex">
+          <div className="vt-icon-sparkles">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path><path d="M20 3v4"></path><path d="M22 5h-4"></path><path d="M4 17v2"></path><path d="M5 18H3"></path></svg>
           </div>
+          <h1 className="vt-title">Khám phá Công cụ AI</h1>
         </div>
+        <p className="vt-subtitle">Tìm hiểu và mua tài khoản các công cụ AI hàng đầu thế giới</p>
+      </div>
 
-        <div className="tools-side-group">
-          <p className="tools-side-label">Khám phá</p>
-          <nav className="tools-side-nav">
-            {quickLinks.map((link) => (
-              <NavLink key={link.to} to={link.to} className={({ isActive }) => `tools-side-link ${isActive ? "active" : ""}`} end={link.to === "/"}>
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
+      <div className="vt-controls flex flex-col lg:flex-row gap-4 mb-8">
+        <div className="vt-search-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="vt-search-icon"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+          <input
+            type="search"
+            className="vt-search-input"
+            placeholder="Tìm kiếm công cụ AI..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
         </div>
-
-        <div className="tools-side-group">
-          <p className="tools-side-label">Danh mục công cụ</p>
-          <div className="tools-side-filter">
-            {categories.map((category) => (
-              <button
-                key={category}
-                type="button"
-                className={`tools-side-filter-btn ${activeCategory === category ? "active" : ""}`}
-                onClick={() => setActiveCategory(category)}
-              >
-                {category === "all" ? "Tất cả" : categoryLabel(category)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="tools-side-group">
-          <p className="tools-side-label">Sắp xếp</p>
-          <div className="tools-side-filter">
-            {sortOptions.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={`tools-side-filter-btn ${sortMode === option.id ? "active" : ""}`}
-                onClick={() => setSortMode(option.id)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </aside>
-
-      <div className="tools-hub-main">
-        <header className="tools-hub-hero">
-          <p className="tools-hero-kicker">Nền tảng AI cho bán hàng và vận hành</p>
-          <h1>Khám phá Công cụ AI</h1>
-          <p>Tìm hiểu và mua tài khoản công cụ AI chất lượng, phù hợp cho team marketing, sale và sản xuất nội dung.</p>
-        </header>
-
-        <div className="tools-toolbar">
-          <label className="tools-search-box" aria-label="Tìm kiếm công cụ AI">
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Tìm kiếm công cụ AI..."
-            />
-          </label>
-          <div className="tools-sort-group">
-            {sortOptions.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={`tools-sort-pill ${sortMode === option.id ? "active" : ""}`}
-                onClick={() => setSortMode(option.id)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="tools-category-row">
-          {topCategories.map((category) => (
+        <div className="vt-filters">
+          <button
+            type="button"
+            className={`vt-filter-btn ${activeCategory === "all" ? "active" : ""}`}
+            onClick={() => setActiveCategory("all")}
+          >
+            Tất cả
+          </button>
+          {categories.filter(c => c !== "all").map((category) => (
             <button
               key={category}
               type="button"
-              className={`tools-category-pill ${activeCategory === category ? "active" : ""}`}
+              className={`vt-filter-btn ${activeCategory === category ? "active" : ""}`}
               onClick={() => setActiveCategory(category)}
             >
-              {category === "all" ? "Tất cả" : categoryLabel(category)}
+              {categoryLabel(category)}
             </button>
           ))}
-          <span className="tools-result-count">Hiển thị {visibleItems.length}/{items.length} công cụ</span>
         </div>
-
-        {visibleItems.length === 0 ? (
-          <article className="tools-empty">
-            <h3>Không tìm thấy công cụ phù hợp</h3>
-            <p>Bạn thử đổi danh mục hoặc từ khóa tìm kiếm nhé.</p>
-          </article>
-        ) : (
-          <div className="tools-grid">
-            {visibleItems.map((tool) => {
-              const currentPrice = Number(tool.accountPrice || 0);
-              const originalPrice = Number(tool.originalPrice || 0);
-              const discount = discountPercent(currentPrice, originalPrice);
-              const featureList = Array.isArray(tool.features) ? tool.features.slice(0, 3) : [];
-
-              return (
-                <Link
-                  to={`/ai-tool/${tool.slug}`}
-                  className="tools-card-link"
-                  aria-label={`Xem chi tiết ${tool.name}`}
-                  key={tool.slug}
-                >
-                  <article className="tools-card">
-                    <div className="tools-card-head">
-                      <img src={tool.logo} alt={tool.name} className="tools-card-logo" />
-                      <div className="tools-card-title-wrap">
-                        <h3>{tool.name}</h3>
-                        <span className="tools-mini-pill">{categoryLabel(tool.category)}</span>
-                      </div>
-                    </div>
-
-                    <p className="tools-card-desc">{tool.description}</p>
-
-                    <div className="tools-feature-row">
-                      {featureList.map((feature) => (
-                        <span key={feature} className="tools-feature-pill">{feature}</span>
-                      ))}
-                    </div>
-
-                    <div className="tools-card-foot">
-                      <div className="tools-price-wrap">
-                        {originalPrice > currentPrice && currentPrice > 0 && (
-                          <span className="tools-price-old">{money(originalPrice)}</span>
-                        )}
-                        <strong>{currentPrice === 0 ? "Miễn phí" : money(currentPrice)}</strong>
-                      </div>
-
-                      <div className="tools-foot-meta">
-                        {discount > 0 && <span className="tools-discount-badge">-{discount}%</span>}
-                        <span className="tools-stock">Kho: {Number(tool.availableCount || 0)}</span>
-                      </div>
-                    </div>
-                  </article>
-                </Link>
-              );
-            })}
-          </div>
-        )}
       </div>
-    </section>
+
+      {visibleItems.length === 0 ? (
+        <article className="tools-empty">
+          <h3>Không tìm thấy công cụ phù hợp</h3>
+          <p>Bạn thử đổi danh mục hoặc từ khóa tìm kiếm nhé.</p>
+        </article>
+      ) : (
+        <div className="vt-grid">
+          {visibleItems.map((tool) => {
+            const currentPrice = Number(tool.accountPrice || 0);
+            const originalPrice = Number(tool.originalPrice || 0);
+            const discount = discountPercent(currentPrice, originalPrice);
+            const featureList = Array.isArray(tool.features) ? tool.features : [];
+
+            return (
+              <Link to={`/ai-tool/${tool.slug}`} className="vt-card-link" key={tool.slug}>
+                <article className="vt-card">
+                  <div className="vt-card-top">
+                    <img src={tool.logo} alt={tool.name} className="vt-card-img" />
+                    <div className="vt-card-info">
+                      <div className="vt-card-title-row">
+                        <h3 className="vt-card-title">{tool.name}</h3>
+                        {/* We use a placeholder logic for Hot item */}
+                        {tool.availableCount > 0 && tool.availableCount < 10 && (
+                          <div className="vt-card-hot">Hot</div>
+                        )}
+                      </div>
+                      <div className="vt-card-category">{categoryLabel(tool.category)}</div>
+                    </div>
+                  </div>
+
+                  <p className="vt-card-desc">{tool.description}</p>
+
+                  <div className="vt-card-features">
+                    {featureList.slice(0, 3).map((feature) => (
+                      <span key={feature} className="vt-card-feature">{feature}</span>
+                    ))}
+                    {featureList.length > 3 && (
+                      <span className="vt-card-feature">+{featureList.length - 3}</span>
+                    )}
+                  </div>
+
+                  <div className="vt-card-bottom">
+                    <div className="vt-card-price-info">
+                      <div className="vt-card-price-col">
+                        {originalPrice > currentPrice && currentPrice > 0 && (
+                          <span className="vt-card-price-old">{money(originalPrice)}</span>
+                        )}
+                        <span className="vt-card-price-new">
+                          {currentPrice === 0 ? "Miễn phí" : money(currentPrice)}
+                        </span>
+                      </div>
+                      {discount > 0 && <span className="vt-card-discount">-{discount}%</span>}
+                    </div>
+
+                    <div className="vt-card-actions">
+                      <div className="vt-card-ext-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
+                      </div>
+                      <div className="vt-card-cart-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg>
+                        {Number(tool.availableCount || 0)}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
