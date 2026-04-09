@@ -43,7 +43,7 @@ export default function Layout({ children }) {
                   </NavLink>
                 ))}
                 {user?.role === "admin" && (
-                  <NavLink to="/admin" className="mlv-header-auth-btn" style={{ marginLeft: '0.5rem' }}>Admin MLV</NavLink>
+                  <NavLink to="/admin" className="mlv-header-link">Quản trị</NavLink>
                 )}
               </nav>
 

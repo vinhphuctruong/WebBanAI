@@ -323,7 +323,7 @@ export default function HomePage() {
               <Link key={to} to={to} className="mlv-header-link">{label}</Link>
             ))}
             {user?.role === "admin" && (
-              <Link to="/admin" className="mlv-header-auth-btn" style={{ marginLeft: '0.5rem' }}>Admin MLV</Link>
+              <Link to="/admin" className="mlv-header-link">Quản trị</Link>
             )}
           </nav>
 
