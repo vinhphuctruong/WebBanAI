@@ -12,16 +12,11 @@ export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [theme, setTheme] = useState(() => {
-    const savedTheme = localStorage.getItem("mlv_theme");
-    if (savedTheme === "light" || savedTheme === "dark") return savedTheme;
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  });
+  const [theme] = useState("dark");
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("mlv_theme", theme);
-  }, [theme]);
+    document.documentElement.setAttribute("data-theme", "dark");
+  }, []);
 
   function handleLogout() {
     logout();
@@ -34,34 +29,32 @@ export default function Layout({ children }) {
     <div className="site-bg">
       <div className="app-shell">
         {!isHomeDashboard && (
-          <header className="topbar">
-            <div className="container topbar-inner">
-              <Link to="/" className="brand">
-                <img src="/tm-software-logo.svg" alt="Logo TM software AI" className="brand-logo" />
-                <span>TM Software AI</span>
+          <header className="mlv-header">
+            <div className="mlv-header-inner">
+              <Link to="/" className="mlv-header-brand">
+                <img src="/tm-software-logo.svg" alt="Mẫu Làm Video" className="mlv-header-logo" />
+                <span>Mẫu Làm<em>Video</em></span>
               </Link>
 
-              <nav className="menu">
-                <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")}>Trang chủ</NavLink>
+              <nav className="mlv-header-nav">
                 {links.map((item) => (
-                  <NavLink key={item.to} to={item.to} className={({ isActive }) => (isActive ? "active" : "")}>{item.label}</NavLink>
+                  <NavLink key={item.to} to={item.to} className="mlv-header-link">
+                    {item.label}
+                  </NavLink>
                 ))}
-                {user?.role === "admin" && <NavLink to="/admin">Quản trị</NavLink>}
+                {user?.role === "admin" && (
+                  <NavLink to="/admin" className="mlv-header-link">Quản trị</NavLink>
+                )}
               </nav>
 
-              <div className="actions">
-                <button className="btn btn-ghost theme-toggle" onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}>
-                  {theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
-                </button>
-                {user ? (
-                  <>
-                    <Link className="btn btn-soft" to="/profile">{user.name}</Link>
-                    <button className="btn btn-outline" onClick={handleLogout}>Đăng xuất</button>
-                  </>
-                ) : (
-                  <Link className="btn btn-primary" to="/auth">Đăng ký / Đăng nhập</Link>
-                )}
-              </div>
+              {user ? (
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <Link className="mlv-header-link" to="/profile">👤 {user.name}</Link>
+                  <button className="mlv-header-link" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }} onClick={handleLogout}>Đăng xuất</button>
+                </div>
+              ) : (
+                <Link className="mlv-header-auth-btn" to="/auth">Đăng ký / Đăng nhập</Link>
+              )}
             </div>
           </header>
         )}
