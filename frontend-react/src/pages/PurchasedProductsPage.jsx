@@ -4,11 +4,15 @@ import { api, money } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
 function formatPurchaseType(itemType) {
-  return itemType === "gem" ? "Prompt" : "AI Tool";
+  return isPromptItem(itemType) ? "Prompt" : "AI Tool";
 }
 
 function productLink(itemType, slug) {
-  return `/${itemType === "gem" ? "chatbotprompt" : "ai-tool"}/${slug}`;
+  return `/${isPromptItem(itemType) ? "chatbotprompt" : "ai-tool"}/${slug}`;
+}
+
+function isPromptItem(itemType) {
+  return ["gem", "chatbotprompt", "chatbot_prompt", "prompt"].includes(String(itemType || "").toLowerCase());
 }
 
 async function copyText(text) {
@@ -36,6 +40,12 @@ async function copyText(text) {
     copied = false;
   } finally {
     document.body.removeChild(textarea);
+  }
+
+  if (!copied) {
+    // Last-resort fallback for browsers/environments that block clipboard APIs on HTTP.
+    const manual = window.prompt("Trình duyệt chặn copy tự động. Nhấn Ctrl+C rồi Enter để copy:", text);
+    return manual !== null;
   }
 
   return copied;
@@ -113,7 +123,7 @@ export default function PurchasedProductsPage() {
       ) : (
         <div className="grid two-cols">
           {purchases.map((purchase) => {
-            const isGem = purchase.item_type === "gem";
+            const isGem = isPromptItem(purchase.item_type);
             const rowId = purchase.id;
             const isPromptOpen = Boolean(promptOpenRows[rowId]);
             const isPromptLoading = Boolean(promptLoadingRows[rowId]);

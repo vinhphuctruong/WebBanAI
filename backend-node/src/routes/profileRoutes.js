@@ -161,7 +161,10 @@ router.get("/purchases/gems/:slug", rateLimitProtectedAccess("gems"), async (req
 
   const orderCheck = await query(
     `SELECT 1 FROM orders 
-     WHERE user_id = $1 AND item_slug = $2 AND item_type = 'gem' AND status = 'paid' 
+     WHERE user_id = $1
+       AND TRIM(item_slug) = TRIM($2)
+       AND item_type IN ('gem', 'chatbotprompt', 'chatbot_prompt', 'prompt')
+       AND status = 'paid' 
      LIMIT 1`,
     [req.user.sub, gem.slug]
   );
