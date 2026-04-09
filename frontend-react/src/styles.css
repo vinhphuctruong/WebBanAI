@@ -649,8 +649,11 @@ p {
 
 .detail-layout {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
   gap: 1rem;
+}
+.detail-layout > * {
+  min-width: 0;
 }
 
 .hero-thumb {
@@ -664,6 +667,92 @@ p {
   position: sticky;
   top: 94px;
   align-self: start;
+}
+
+.yt-player-wrap {
+  margin-top: 1.15rem;
+  display: grid;
+  gap: 0.55rem;
+}
+.yt-player-label {
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.96rem;
+  padding: 0.45rem 0.6rem;
+  border-left: 3px solid var(--brand);
+  background: color-mix(in srgb, var(--brand) 8%, transparent);
+  border-radius: 8px;
+}
+.yt-player-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #000;
+}
+.yt-player-iframe,
+.yt-player-thumb-btn,
+.yt-player-thumbnail {
+  width: 100%;
+  height: 100%;
+}
+.yt-player-thumb-btn {
+  position: relative;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  display: block;
+}
+.yt-player-thumbnail {
+  display: block;
+  object-fit: cover;
+}
+.yt-player-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 20%, hsl(0 0% 0% / 0.45) 100%);
+}
+.yt-player-play-wrap {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.55rem;
+  justify-items: center;
+}
+.yt-player-play-btn {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  box-shadow: 0 14px 30px hsl(222 47% 3% / 0.45);
+}
+.yt-player-play-hint {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-shadow: 0 1px 2px hsl(0 0% 0% / 0.7);
+}
+.yt-sidebar-videos {
+  margin-top: 0.7rem;
+  border-top: 1px dashed var(--line);
+  padding-top: 0.75rem;
+  display: grid;
+  gap: 0.45rem;
+}
+.yt-sidebar-title {
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+.yt-sidebar-link {
+  font-size: 0.86rem;
+  color: var(--brand);
 }
 
 .chips {
