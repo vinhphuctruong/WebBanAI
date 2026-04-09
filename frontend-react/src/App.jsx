@@ -8,6 +8,7 @@ import ToolDetailPage from "./pages/ToolDetailPage.jsx";
 import PricingPage from "./pages/PricingPage.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import PurchasedProductsPage from "./pages/PurchasedProductsPage.jsx";
 import PayPage from "./pages/PayPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/purchased-products" element={<PurchasedProductsPage />} />
           <Route path="/pay/:itemType/:slug" element={<PayPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<NotFoundPage />} />

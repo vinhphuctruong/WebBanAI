@@ -156,6 +156,9 @@ export default function Layout({ children }) {
                   <Link to="/profile" role="menuitem" className="mlv-dropdown-item">
                     Thông tin tài khoản
                   </Link>
+                  <Link to="/purchased-products" role="menuitem" className="mlv-dropdown-item">
+                    Sản phẩm đã mua
+                  </Link>
                   <div className="mlv-dropdown-divider" />
                   <button type="button" onClick={confirmLogout} role="menuitem" className="mlv-dropdown-item mlv-dropdown-danger">
                     Đăng xuất
