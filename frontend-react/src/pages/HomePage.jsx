@@ -1,55 +1,172 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, money } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
-function normalizeCategory(value, fallback = "AI Video") {
+/* ─── constants ──────────────────────────────────────────── */
+const SALE_DURATION_MS = ((11 * 24 + 6) * 60 * 60 + 34 * 60 + 23) * 1000;
+const FALLBACK_IMAGE = "/tm-software-logo.svg";
+
+/* ─── helpers ────────────────────────────────────────────── */
+function normalizeCategory(value, fallback = "AI Video", withCaps = true) {
   if (!value) return fallback;
-  return value
-    .replace("cat-", "")
-    .replace(/[_-]+/g, " ")
-    .trim();
+  const normalized = value.replace("cat-", "").replace(/[_-]+/g, " ").trim();
+  if (!withCaps) return normalized;
+  return normalized
+    .split(" ")
+    .filter(Boolean)
+    .map((c) => c.charAt(0).toUpperCase() + c.slice(1))
+    .join(" ");
 }
 
-function ToolCard({ item }) {
-  const hasDiscount = Number(item.originalPrice || 0) > Number(item.price || 0);
+function discountPercent(currentPrice, originalPrice) {
+  const cur = Number(currentPrice || 0);
+  const orig = Number(originalPrice || 0);
+  if (cur <= 0 || orig <= cur) return 0;
+  return Math.round(((orig - cur) / orig) * 100);
+}
+
+function toCountdown(deadline) {
+  const total = Math.max(0, deadline - Date.now());
+  const days = Math.floor(total / (24 * 60 * 60 * 1000));
+  const hours = Math.floor((total % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+  const minutes = Math.floor((total % (60 * 60 * 1000)) / (60 * 1000));
+  const seconds = Math.floor((total % (60 * 1000)) / 1000);
+  const p = (n) => String(n).padStart(2, "0");
+  return { days: p(days), hours: p(hours), minutes: p(minutes), seconds: p(seconds) };
+}
+
+/* ─── GemCard – vertical portrait card like maulamvideo ─── */
+function GemCard({ item, isNew = false, typeBadge = "Chatbot AI", isFlash = false }) {
+  const discount = discountPercent(item.price, item.originalPrice);
+  const isPremium = Number(item.price || 0) > 150000;
+  const isFree = Number(item.price || 0) === 0;
 
   return (
-    <Link to={item.link} className="home-hub-tool-link" aria-label={`Xem chi tiết ${item.title}`}>
-      <article className="home-hub-tool-card">
-        <div className="home-hub-tool-logo-wrap">
-          <img src={item.image} alt={item.title} className="home-hub-tool-logo" />
+    <div className="mlv-card-wrap">
+      <article className="mlv-card">
+        {/* Image area */}
+        <div className="mlv-card-img-wrap">
+          <img
+            src={item.image || FALLBACK_IMAGE}
+            alt={item.title}
+            className="mlv-card-img"
+            loading="lazy"
+          />
+
+          {/* Top-left badges */}
+          <div className="mlv-card-badges-tl">
+            {isFlash && discount > 0 && (
+              <span className="mlv-badge mlv-badge-flash">
+                ⚡ -{discount}%
+              </span>
+            )}
+            {isPremium && (
+              <span className="mlv-badge mlv-badge-premium">
+                👑 Premium
+              </span>
+            )}
+            {isNew && (
+              <span className="mlv-badge mlv-badge-new">
+                ✨ Mới
+              </span>
+            )}
+            {isFree && (
+              <span className="mlv-badge mlv-badge-free">
+                🎁 Miễn phí
+              </span>
+            )}
+          </div>
+
+          {/* Top-right type badge */}
+          <div className="mlv-card-badge-tr">
+            <span className="mlv-type-badge">
+              💬 {typeBadge}
+            </span>
+          </div>
+
+          {/* Bookmark button */}
+          <button className="mlv-bookmark-btn" title="Lưu" aria-label="Lưu">
+            🔖
+          </button>
         </div>
-        <h3>{item.title}</h3>
-        <p className="home-hub-tool-stars">★★★★★</p>
-        <span className="home-hub-tool-badge">{item.category}</span>
-        <div className="home-hub-tool-price">
-          <strong>{item.price === 0 ? "Miễn phí" : money(item.price)}</strong>
-          {hasDiscount && <small>{money(item.originalPrice)}</small>}
-        </div>
+
+        {/* Card body */}
+        <Link to={item.link} className="mlv-card-body">
+          <div className="mlv-card-title-row">
+            <h3 className="mlv-card-title">{item.title}</h3>
+            <span className="mlv-version-badge">v1.0</span>
+          </div>
+          <p className="mlv-card-desc">{item.description}</p>
+          <div className="mlv-card-foot">
+            {item.soldCount > 0 && (
+              <span className="mlv-sold">{item.soldCount} đã bán</span>
+            )}
+            <div className="mlv-price-group">
+              {discount > 0 && (
+                <span className="mlv-discount-pill">-{discount}%</span>
+              )}
+              {Number(item.originalPrice || 0) > Number(item.price || 0) && (
+                <span className="mlv-price-old">{money(item.originalPrice)}</span>
+              )}
+              <span className={`mlv-price-now ${isFree ? "mlv-price-free" : ""}`}>
+                {isFree ? "Miễn phí" : money(item.price)}
+              </span>
+            </div>
+          </div>
+        </Link>
       </article>
-    </Link>
+    </div>
   );
 }
 
-function ReviewCard({ review }) {
+/* ─── FreePromptCard ─────────────────────────────────────── */
+function FreePromptCard({ item }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(item.description || item.title).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
+  }
+
   return (
-    <article className="home-hub-review-card">
-      <div className="home-hub-review-icon">✦</div>
-      <h3>{review.name}</h3>
-      <span>{review.category || "AI Tool"}</span>
-      <p>{review.description}</p>
-      <Link to="/ai-tools">Xem review →</Link>
+    <article className="mlv-prompt-card">
+      <Link to={item.link} className="mlv-prompt-img-wrap">
+        <img src={item.image || FALLBACK_IMAGE} alt={item.title} className="mlv-prompt-img" loading="lazy" />
+      </Link>
+      <div className="mlv-prompt-body">
+        <div className="mlv-prompt-title-row">
+          <Link to={item.link} className="mlv-prompt-title">{item.title}</Link>
+          <div className="mlv-prompt-actions">
+            <button className="mlv-prompt-icon-btn" title="Lưu">🔖</button>
+            <button className="mlv-prompt-icon-btn mlv-copy-btn" title="Sao chép" onClick={handleCopy}>
+              {copied ? "✅" : "📋"}
+            </button>
+          </div>
+        </div>
+        <span className="mlv-prompt-cat-badge">🎨 Thiết kế</span>
+        <div className="mlv-prompt-code-wrap">
+          <pre className="mlv-prompt-code">{item.description}</pre>
+        </div>
+        <p className="mlv-prompt-copy-count">📋 {item.copyCount || 0} lần sao chép</p>
+      </div>
     </article>
   );
 }
 
+/* ─── Main Page ──────────────────────────────────────────── */
 export default function HomePage() {
   const { user } = useAuth();
+  const saleDeadlineRef = useRef(Date.now() + SALE_DURATION_MS);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({ gems: [], tools: [], reviews: [] });
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [activeGemCategory, setActiveGemCategory] = useState("all");
+  const [countdown, setCountdown] = useState(() => toCountdown(saleDeadlineRef.current));
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     Promise.all([api("/catalog/gems"), api("/catalog/ai-tools"), api("/catalog/reviews")])
@@ -58,119 +175,355 @@ export default function HomePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const toolItems = useMemo(() => {
-    return data.tools.map((tool) => ({
-      key: `tool-${tool.slug}`,
-      title: tool.name,
-      image: tool.logo,
-      category: normalizeCategory(tool.category, "AI Video"),
-      price: Number(tool.accountPrice || 0),
-      originalPrice: Number(tool.originalPrice || 0),
-      link: `/ai-tool/${tool.slug}`
-    }));
-  }, [data.tools]);
+  useEffect(() => {
+    const timer = window.setInterval(() => setCountdown(toCountdown(saleDeadlineRef.current)), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
-  const visibleTools = useMemo(() => {
+  const gemCategories = useMemo(
+    () => ["all", ...new Set(data.gems.map((g) => g.categoryId).filter(Boolean))],
+    [data.gems]
+  );
+
+  const gemItems = useMemo(() =>
+    data.gems.map((gem) => ({
+      key: `gem-${gem.slug}`,
+      title: gem.title,
+      description: gem.description || "Mẫu chatbot và workflow AI giúp bạn tạo nội dung nhanh hơn.",
+      image: gem.thumbnail || FALLBACK_IMAGE,
+      category: normalizeCategory(gem.categoryId, "Chatbot Prompt"),
+      price: Number(gem.price || 0),
+      originalPrice: Number(gem.originalPrice || 0),
+      soldCount: Number(gem.soldCount || 0),
+      link: `/chatbotprompt/${gem.slug}`,
+      isNew: gem.isNew || false,
+    })),
+    [data.gems]
+  );
+
+  const flashSaleItems = useMemo(() => {
     const normalizedQuery = query.toLowerCase().trim();
-    const sorted = [...toolItems].sort((a, b) => b.price - a.price);
+    const source = [...gemItems]
+      .filter((item) => Number(item.originalPrice || 0) > Number(item.price || 0))
+      .sort((a, b) => discountPercent(b.price, b.originalPrice) - discountPercent(a.price, a.originalPrice));
+    const fallback = source.length > 0 ? source : [...gemItems].sort((a, b) => b.price - a.price);
+    return fallback
+      .filter((item) => {
+        const catMatch = activeGemCategory === "all" || item.category === normalizeCategory(activeGemCategory, "", false);
+        const qMatch = !normalizedQuery || `${item.title} ${item.description} ${item.category}`.toLowerCase().includes(normalizedQuery);
+        return catMatch && qMatch;
+      })
+      .slice(0, 4);
+  }, [gemItems, query, activeGemCategory]);
 
-    if (!normalizedQuery) return sorted.slice(0, 10);
+  const hotGems = useMemo(() =>
+    [...gemItems]
+      .sort((a, b) => {
+        const diff = discountPercent(b.price, b.originalPrice) - discountPercent(a.price, a.originalPrice);
+        return diff !== 0 ? diff : b.price - a.price;
+      })
+      .slice(0, 4),
+    [gemItems]
+  );
 
-    return sorted
-      .filter((item) => `${item.title} ${item.category}`.toLowerCase().includes(normalizedQuery))
-      .slice(0, 10);
-  }, [toolItems, query]);
+  const freePromptItems = useMemo(() => {
+    const free = gemItems.filter((item) => Number(item.price || 0) === 0);
+    return (free.length > 0 ? free : [...gemItems].sort((a, b) => a.price - b.price)).slice(0, 4);
+  }, [gemItems]);
 
-  const reviewItems = useMemo(() => data.reviews.slice(0, 4), [data.reviews]);
+  const mainGemItems = useMemo(() =>
+    [...gemItems]
+      .sort((a, b) => b.price - a.price)
+      .slice(0, 8),
+    [gemItems]
+  );
 
-  if (loading) return <p>Đang tải...</p>;
-  if (error) return <p className="error">{error}</p>;
+  if (loading) {
+    return (
+      <div className="mlv-page">
+        <div className="mlv-loading">
+          <div className="mlv-loading-spinner" />
+          <p>Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mlv-page">
+        <p className="mlv-error">{error}</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="home-hub-page">
-      <header className="home-hub-topbar">
-        <div className="home-hub-topbrand">AI Templates</div>
+    <div className="mlv-page">
+      {/* ── Top Header ── */}
+      <header className="mlv-header">
+        <div className="mlv-header-inner">
+          <Link to="/" className="mlv-header-brand">
+            <img src="/tm-software-logo.svg" alt="Mẫu Làm Video" className="mlv-header-logo" />
+            <span>Mẫu Làm<em>Video</em></span>
+          </Link>
 
-        <Link to="/" className="home-hub-master-brand">
-          <img src="/tm-software-logo.svg" alt="Mẫu Làm Video" />
-          <strong>Mẫu Làm<span>Video</span></strong>
-        </Link>
+          <nav className="mlv-header-nav" aria-label="Navigation chính">
+            {[
+              { to: "/", label: "Trang chủ" },
+              { to: "/ai-tools", label: "Công cụ AI" },
+              { to: "/chatbotprompt", label: "Chatbot Prompt" },
+              { to: "/pricing", label: "Bảng giá" },
+            ].map(({ to, label }) => (
+              <Link key={to} to={to} className="mlv-header-link">{label}</Link>
+            ))}
+          </nav>
 
-        <nav className="home-hub-menu">
-          <Link to="/">Trang chủ</Link>
-          <Link to="/ai-tools">Công cụ AI</Link>
-          <a href="#reviews">Review AI</a>
-          <Link to="/chatbotprompt">Chatbot Prompt</Link>
-          <Link to="/pricing">Bảng giá</Link>
-          <a href="#affiliate">Cộng tác viên</a>
-        </nav>
-
-        <Link to={user ? "/profile" : "/auth"} className="home-hub-auth-btn">
-          {user ? user.name : "Đăng ký / Đăng nhập"}
-        </Link>
+          <Link to={user ? "/profile" : "/auth"} className="mlv-header-auth-btn">
+            {user ? user.name : "Đăng ký / Đăng nhập"}
+          </Link>
+        </div>
       </header>
 
-      <div className="home-hub-body">
-        <aside className="home-hub-sidebar">
-          <div className="home-hub-side-group">
-            <p>Khám phá</p>
-            <Link to="/" className="active">Trang chủ</Link>
-            <Link to="/ai-tools">Công cụ AI</Link>
-            <a href="#reviews">Review AI</a>
-            <Link to="/chatbotprompt">Chatbot Prompt</Link>
-            <Link to="/chatbotprompt">Prompt miễn phí</Link>
-            <Link to="/chatbotprompt">VEO3 Workflow</Link>
-          </div>
+      {/* ── Shell: sidebar + main ── */}
+      <div className={`mlv-shell ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
 
-          <div className="home-hub-side-group">
-            <p>Khác</p>
-            <Link to="/chatbotprompt">Custom Chatbot</Link>
-            <Link to="/pricing">Bảng giá</Link>
-            <a href="#about">Giới thiệu</a>
-          </div>
+        {/* ── Sidebar ── */}
+        <aside className="mlv-sidebar" aria-label="Điều hướng sidebar">
+          <Link to="/" className="mlv-sidebar-brand">
+            <div className="mlv-sidebar-icon">✨</div>
+            <strong>AI Templates</strong>
+          </Link>
 
-          <button type="button" className="home-hub-minimize">Thu nhỏ</button>
+          <nav>
+            <p className="mlv-sidebar-group-label">Khám phá</p>
+            <div className="mlv-sidebar-group">
+              <Link to="/" className="mlv-sidebar-link active">🏠 Trang chủ</Link>
+              <Link to="/ai-tools" className="mlv-sidebar-link">🖥️ Công cụ AI</Link>
+              <a href="#reviews" className="mlv-sidebar-link">✨ Review AI</a>
+              <Link to="/chatbotprompt" className="mlv-sidebar-link">💬 Chatbot Prompt</Link>
+              <a href="#free-prompts" className="mlv-sidebar-link">📄 Prompt miễn phí</a>
+              <a href="#main-gems" className="mlv-sidebar-link">⚙️ VEO3 Workflow</a>
+            </div>
+
+            <p className="mlv-sidebar-group-label">Khác</p>
+            <div className="mlv-sidebar-group">
+              <Link to="/chatbotprompt" className="mlv-sidebar-link">🪄 Custom Chatbot</Link>
+              <Link to="/pricing" className="mlv-sidebar-link">💳 Bảng giá</Link>
+            </div>
+
+            {gemCategories.length > 1 && (
+              <>
+                <p className="mlv-sidebar-group-label">Danh mục</p>
+                <div className="mlv-sidebar-group">
+                  {gemCategories.slice(0, 7).map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      className={`mlv-sidebar-link mlv-sidebar-btn ${activeGemCategory === cat ? "active" : ""}`}
+                      onClick={() => setActiveGemCategory(cat)}
+                    >
+                      {cat === "all" ? "🗂️ Tất cả" : normalizeCategory(cat)}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </nav>
+
+          <button
+            className="mlv-sidebar-collapse"
+            onClick={() => setSidebarOpen((v) => !v)}
+            aria-label="Thu nhỏ sidebar"
+          >
+            {sidebarOpen ? "◀ Thu nhỏ" : "▶"}
+          </button>
         </aside>
 
-        <main className="home-hub-main">
-          <section className="home-hub-section">
-            <header className="home-hub-section-head">
-              <h2>Flash Sale</h2>
-              <label className="home-hub-search">
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Tìm nhanh AI tool..."
-                />
-              </label>
+        {/* ── Main content ── */}
+        <main className="mlv-main">
+
+          {/* ── Hero banner ── */}
+          <section className="mlv-hero">
+            <div className="mlv-hero-inner">
+              <div className="mlv-hero-glow mlv-hero-glow-1" />
+              <div className="mlv-hero-glow mlv-hero-glow-2" />
+              <div className="mlv-hero-content">
+                <div className="mlv-hero-icon-wrap">
+                  <span className="mlv-hero-icon">🎬</span>
+                </div>
+                <div className="mlv-hero-text">
+                  <span className="mlv-hero-kicker">✨ Dùng thử miễn phí</span>
+                  <h1>AI hỗ trợ làm <span className="mlv-accent">video bán hàng</span> tốt nhất</h1>
+                  <p>Tạo tài khoản và dùng thử ngay công cụ AI tạo video marketing chuyên nghiệp, nhanh chóng.</p>
+                  <a
+                    href="https://khoahocbigman.com/go/freetest"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mlv-hero-cta"
+                  >
+                    Dùng thử ngay →
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Flash Sale ── */}
+          <section className="mlv-section mlv-section-flash" id="flash-sale">
+            <div className="mlv-section-glow-red" />
+            <header className="mlv-section-head">
+              <div className="mlv-section-title-wrap">
+                <div className="mlv-section-icon mlv-icon-red">⚡</div>
+                <div>
+                  <div className="mlv-section-title-row">
+                    <h2>Flash <em>Sale</em></h2>
+                    <span className="mlv-flash-badge">Giảm sốc</span>
+                  </div>
+                  <div className="mlv-section-subtitle-row">
+                    <span className="mlv-muted-text">Ưu đãi có thời hạn</span>
+                    <div className="mlv-countdown">
+                      🕐 <span className="mlv-countdown-digits">
+                        {countdown.days}d{" "}
+                        {countdown.hours}:{countdown.minutes}:{countdown.seconds}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <Link to="/chatbotprompt" className="mlv-see-all mlv-see-all-red">Xem tất cả →</Link>
             </header>
 
-            {visibleTools.length === 0 ? (
-              <article className="home-hub-empty">
-                <h3>Không tìm thấy công cụ phù hợp</h3>
-                <p>Bạn thử đổi từ khóa khác nhé.</p>
-              </article>
+            {flashSaleItems.length === 0 ? (
+              <div className="mlv-empty">
+                <h3>Không tìm thấy sản phẩm</h3>
+                <p>Thử đổi danh mục hoặc từ khoá nhé.</p>
+              </div>
             ) : (
-              <div className="home-hub-tools-grid">
-                {visibleTools.map((item) => (
-                  <ToolCard key={item.key} item={item} />
+              <div className="mlv-grid">
+                {flashSaleItems.map((item) => (
+                  <GemCard key={item.key} item={item} isNew isFlash typeBadge="Chatbot AI" />
                 ))}
               </div>
             )}
           </section>
 
-          <section className="home-hub-section" id="reviews">
-            <header className="home-hub-section-head">
-              <h2>Đánh giá công cụ AI</h2>
-              <Link to="/ai-tools">Xem tất cả →</Link>
+          {/* ── Hot Chatbots ── */}
+          <section className="mlv-section" id="hot-chatbots">
+            <header className="mlv-section-head">
+              <div className="mlv-section-title-wrap">
+                <div className="mlv-section-icon mlv-icon-orange">🔥</div>
+                <div>
+                  <h2>Chatbot <em>Hot</em></h2>
+                  <p className="mlv-muted-text">Những chatbot được yêu thích nhất</p>
+                </div>
+              </div>
+              <Link to="/chatbotprompt" className="mlv-see-all">Xem tất cả →</Link>
             </header>
-
-            <div className="home-hub-review-grid">
-              {reviewItems.map((review) => (
-                <ReviewCard key={review.slug} review={review} />
+            <div className="mlv-grid">
+              {hotGems.map((item) => (
+                <GemCard key={item.key} item={item} isNew={item.isNew} typeBadge="Chatbot AI" />
               ))}
             </div>
           </section>
+
+          {/* ── Free Prompts ── */}
+          <section className="mlv-section" id="free-prompts">
+            <header className="mlv-section-head">
+              <div className="mlv-section-title-wrap">
+                <div className="mlv-section-icon mlv-icon-primary">✨</div>
+                <div>
+                  <div className="mlv-section-kicker-wrap">
+                    <span className="mlv-kicker-pill">✨ Miễn phí</span>
+                  </div>
+                  <h2>Thư viện <em>Prompt</em> miễn phí</h2>
+                  <p className="mlv-muted-text">Sao chép và sử dụng ngay với ChatGPT, Claude, Gemini và các công cụ AI khác</p>
+                </div>
+              </div>
+              <Link to="/chatbotprompt" className="mlv-see-all">Xem kho prompt →</Link>
+            </header>
+            <div className="mlv-prompt-grid">
+              {freePromptItems.map((item) => (
+                <FreePromptCard key={`free-${item.key}`} item={item} />
+              ))}
+            </div>
+            <div className="mlv-center-btn-row">
+              <Link to="/chatbotprompt" className="mlv-outline-btn">
+                Xem tất cả Prompt miễn phí →
+              </Link>
+            </div>
+          </section>
+
+          {/* ── Main Chatbot Section ── */}
+          <section className="mlv-section" id="main-gems">
+            <header className="mlv-section-head">
+              <div className="mlv-section-title-wrap">
+                <div className="mlv-section-icon mlv-icon-primary">💬</div>
+                <div>
+                  <h2>Chatbot <em>Prompt</em></h2>
+                  <p className="mlv-muted-text">Công cụ AI giúp bạn viết prompt chuyên nghiệp</p>
+                </div>
+              </div>
+              <Link to="/chatbotprompt" className="mlv-see-all">Xem tất cả →</Link>
+            </header>
+
+            {/* Search + Category filter */}
+            <div className="mlv-filter-bar">
+              <label className="mlv-search-label" aria-label="Tìm chatbot">
+                🔍
+                <input
+                  className="mlv-search-input"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Tìm chatbot hoặc prompt..."
+                />
+              </label>
+              <div className="mlv-category-pills">
+                {gemCategories.slice(0, 6).map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    className={`mlv-cat-pill ${activeGemCategory === cat ? "active" : ""}`}
+                    onClick={() => setActiveGemCategory(cat)}
+                  >
+                    {cat === "all" ? "Tất cả" : normalizeCategory(cat)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mlv-grid mlv-grid-3">
+              {mainGemItems.map((item) => (
+                <GemCard key={item.key} item={item} isNew={item.isNew} typeBadge="Chatbot AI" />
+              ))}
+            </div>
+          </section>
+
+          {/* ── Stats + CTA footer ── */}
+          <section className="mlv-section mlv-cta-section" id="about">
+            <div className="mlv-cta-inner">
+              <div className="mlv-cta-glow" />
+              <h2>Tham gia cộng đồng <span className="mlv-accent">AI Creator</span></h2>
+              <p>Hơn {data.gems.length}+ chatbot template, {data.tools.length}+ AI tools đang chờ bạn khám phá.</p>
+              <div className="mlv-cta-stats">
+                <div className="mlv-stat">
+                  <strong>{data.gems.length}+</strong>
+                  <span>Chatbot templates</span>
+                </div>
+                <div className="mlv-stat">
+                  <strong>{data.tools.length}+</strong>
+                  <span>AI Tools</span>
+                </div>
+                <div className="mlv-stat">
+                  <strong>{data.reviews.length}+</strong>
+                  <span>Bài review</span>
+                </div>
+              </div>
+              <Link to={user ? "/profile" : "/auth"} className="mlv-hero-cta">
+                {user ? "Vào trang cá nhân" : "Đăng ký miễn phí"}
+              </Link>
+            </div>
+          </section>
+
         </main>
       </div>
     </div>
