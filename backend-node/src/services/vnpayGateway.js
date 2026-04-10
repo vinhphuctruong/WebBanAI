@@ -23,17 +23,18 @@ function sortObject(obj) {
  */
 export function createVnpayPaymentUrl({ paymentId, orderId, amount, orderInfo, ipAddr }) {
   const cfg = env.payment.vnpay;
-  const now = new Date();
 
+  // VNPay requires dates in Vietnam timezone (UTC+7)
   const pad = (n) => String(n).padStart(2, "0");
+  const vnTime = new Date(Date.now() + 7 * 60 * 60 * 1000); // shift to UTC+7
   const createDate =
-    `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}` +
-    `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    `${vnTime.getUTCFullYear()}${pad(vnTime.getUTCMonth() + 1)}${pad(vnTime.getUTCDate())}` +
+    `${pad(vnTime.getUTCHours())}${pad(vnTime.getUTCMinutes())}${pad(vnTime.getUTCSeconds())}`;
 
-  const expireDate = new Date(now.getTime() + 15 * 60 * 1000);
+  const vnExpire = new Date(vnTime.getTime() + 15 * 60 * 1000);
   const expireDateStr =
-    `${expireDate.getFullYear()}${pad(expireDate.getMonth() + 1)}${pad(expireDate.getDate())}` +
-    `${pad(expireDate.getHours())}${pad(expireDate.getMinutes())}${pad(expireDate.getSeconds())}`;
+    `${vnExpire.getUTCFullYear()}${pad(vnExpire.getUTCMonth() + 1)}${pad(vnExpire.getUTCDate())}` +
+    `${pad(vnExpire.getUTCHours())}${pad(vnExpire.getUTCMinutes())}${pad(vnExpire.getUTCSeconds())}`;
 
   let vnpParams = {
     vnp_Version: "2.1.0",
