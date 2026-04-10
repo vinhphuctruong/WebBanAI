@@ -1,4 +1,4 @@
-﻿import dotenv from "dotenv";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -31,6 +31,22 @@ export const env = {
     qrImageUrl: process.env.BANK_QR_IMAGE_URL || "",
     zaloLink: process.env.SALES_ZALO_LINK || "",
     telegramLink: process.env.SALES_TELEGRAM_LINK || "",
-    salesPhone: process.env.SALES_PHONE || ""
-  }
+    salesPhone: process.env.SALES_PHONE || "",
+    vnpay: {
+      tmnCode: process.env.VNPAY_TMN_CODE || "CGXZLS0Z",
+      hashSecret: process.env.VNPAY_HASH_SECRET || "RAOEXHYVSDDILENYWSLDIIZTANXUXZFJ",
+      paymentUrl: process.env.VNPAY_PAYMENT_URL || "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html",
+      returnUrl: process.env.VNPAY_RETURN_URL || `${process.env.API_BASE_URL || "http://localhost:8080"}/api/payments/vnpay/return`,
+    },
+    momo: {
+      partnerCode: process.env.MOMO_PARTNER_CODE || "MOMO",
+      accessKey: process.env.MOMO_ACCESS_KEY || "F8BBA842ECF85",
+      secretKey: process.env.MOMO_SECRET_KEY || "K951B6PE1waDMi640xX08PD3vg6EkVlz",
+      apiEndpoint: process.env.MOMO_API_ENDPOINT || "https://test-payment.momo.vn/v2/gateway/api",
+      redirectUrl: process.env.MOMO_REDIRECT_URL || `${process.env.APP_BASE_URL || "http://localhost:5173"}/pay/result`,
+      ipnUrl: process.env.MOMO_IPN_URL || `${process.env.API_BASE_URL || "http://localhost:8080"}/api/payments/momo/ipn`,
+    },
+  },
+  appBaseUrl: process.env.APP_BASE_URL || "http://localhost:5173",
+  apiBaseUrl: process.env.API_BASE_URL || "http://localhost:8080"
 };

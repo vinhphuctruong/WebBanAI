@@ -66,7 +66,7 @@ function validateCustomerContact({ customerName, customerPhone, customerEmail })
   };
 }
 
-export async function createPayment({ userId, itemType, slug, quantity = 1, customerName = null, customerPhone = null, customerEmail = null }) {
+export async function createPayment({ userId, itemType, slug, quantity = 1, customerName = null, customerPhone = null, customerEmail = null, provider = "bank_transfer" }) {
   await ensureOrderContactColumns();
   const contact = validateCustomerContact({ customerName, customerPhone, customerEmail });
 
@@ -81,13 +81,18 @@ export async function createPayment({ userId, itemType, slug, quantity = 1, cust
     throw new Error("San pham khong ho tro thanh toan");
   }
 
+  const validProviders = ["bank_transfer", "vnpay", "momo"];
+  const selectedProvider = validProviders.includes(provider) ? provider : "bank_transfer";
+
   const qty = Math.max(1, Number(quantity || 1));
   const amount = unitPrice * qty;
   const orderId = uuidv4();
   const paymentId = uuidv4();
   const paymentCode = `TMV${paymentId.replace(/-/g, "").slice(0, 10).toUpperCase()}`;
 
-  const instruction = `Chuyen khoan ${env.payment.bankName} - STK ${env.payment.accountNumber} (${env.payment.accountName}), noi dung: ${paymentCode}`;
+  const instruction = selectedProvider === "bank_transfer"
+    ? `Chuyen khoan ${env.payment.bankName} - STK ${env.payment.accountNumber} (${env.payment.accountName}), noi dung: ${paymentCode}`
+    : "";
 
   await withTransaction(async (client) => {
     await client.query(
@@ -98,12 +103,71 @@ export async function createPayment({ userId, itemType, slug, quantity = 1, cust
 
     await client.query(
       `INSERT INTO payments (id, order_id, user_id, provider, status, payment_code, payment_url, instruction)
-       VALUES ($1, $2, $3, 'bank_transfer', 'pending', $4, $5, $6)`,
-      [paymentId, orderId, userId, paymentCode, env.payment.qrImageUrl, instruction]
+       VALUES ($1, $2, $3, $4, 'pending', $5, $6, $7)`,
+      [paymentId, orderId, userId, selectedProvider, paymentCode, env.payment.qrImageUrl, instruction]
     );
   });
 
-  return getPaymentById(paymentId, userId, true);
+  return {
+    paymentId,
+    orderId,
+    amount,
+    provider: selectedProvider,
+    paymentCode,
+    title: product.title || product.name,
+    orderInfo: `Thanh toan ${product.title || product.name}`,
+  };
+}
+
+/**
+ * Auto-confirm payment from gateway IPN callback (VNPay/MoMo).
+ * This is the server-to-server flow — no user/admin action needed.
+ */
+export async function autoConfirmPayment(paymentId, transactionRef = "") {
+  const result = await query(
+    `SELECT p.id, p.user_id, p.order_id, p.status, o.amount, o.item_type, o.item_slug
+     FROM payments p
+     JOIN orders o ON o.id = p.order_id
+     WHERE p.id = $1`,
+    [paymentId]
+  );
+  const row = result.rows[0];
+  if (!row) {
+    console.warn(`[autoConfirm] Payment not found: ${paymentId}`);
+    return false;
+  }
+
+  if (row.status === "success") {
+    return true; // Already confirmed
+  }
+
+  await withTransaction(async (client) => {
+    await client.query(
+      `UPDATE payments SET status = 'success', payment_url = $2, updated_at = NOW() WHERE id = $1`,
+      [paymentId, transactionRef]
+    );
+    await client.query(
+      `UPDATE orders SET status = 'paid', updated_at = NOW() WHERE id = $1`,
+      [row.order_id]
+    );
+
+    if (row.item_type === "ai_tool") {
+      await AiToolModel.updateOne(
+        { slug: row.item_slug },
+        { $inc: { availableCount: -1 } }
+      );
+    }
+
+    await rewardReferralIfAny({
+      buyerUserId: row.user_id,
+      orderId: row.order_id,
+      orderAmount: row.amount,
+      client
+    });
+  });
+
+  console.info(`[autoConfirm] Payment ${paymentId} confirmed via gateway (txn: ${transactionRef})`);
+  return true;
 }
 
 export async function getPaymentById(paymentId, requesterUserId, allowStaff = false) {

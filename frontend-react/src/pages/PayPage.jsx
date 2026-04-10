@@ -26,6 +26,27 @@ function validateContactForm(contactForm) {
   return "";
 }
 
+const PAYMENT_METHODS = [
+  {
+    id: "bank_transfer",
+    label: "Chuyển khoản ngân hàng",
+    icon: "🏦",
+    desc: "Chuyển khoản thủ công, admin xác nhận",
+  },
+  {
+    id: "vnpay",
+    label: "VNPay",
+    icon: "💳",
+    desc: "ATM / Visa / MasterCard / QR Code",
+  },
+  {
+    id: "momo",
+    label: "Ví MoMo",
+    icon: "📱",
+    desc: "Thanh toán bằng ví MoMo",
+  },
+];
+
 export default function PayPage() {
   const { itemType, slug } = useParams();
   const { user } = useAuth();
@@ -36,6 +57,7 @@ export default function PayPage() {
   const [payment, setPayment] = useState(null);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState("");
 
   const [contactForm, setContactForm] = useState({
     name: user?.name || "",
@@ -74,16 +96,21 @@ export default function PayPage() {
       });
   }, [user, itemType, slug]);
 
-  function startNewPayment() {
+  function goToMethodSelection() {
     const validationError = validateContactForm(contactForm);
     if (validationError) {
       setError(validationError);
-      setStep("contact");
       return;
     }
-
     setError("");
+    setStep("method");
+  }
+
+  function startPayment(method) {
+    setError("");
+    setSelectedMethod(method);
     setStep("creating");
+
     api("/payments/create", {
       method: "POST",
       body: JSON.stringify({ 
@@ -92,16 +119,28 @@ export default function PayPage() {
         quantity: 1,
         customerName: contactForm.name,
         customerPhone: contactForm.phone,
-        customerEmail: contactForm.email
+        customerEmail: contactForm.email,
+        provider: method,
       })
     })
       .then((res) => {
-        setPayment(res.payment);
-        setStep("payment");
+        // VNPay/MoMo: redirect to payment gateway
+        if (res.redirect && res.paymentUrl) {
+          window.location.href = res.paymentUrl;
+          return;
+        }
+        // Bank transfer: show payment details
+        if (res.payment) {
+          setPayment(res.payment);
+          setStep("payment");
+        } else {
+          setError("Không nhận được thông tin thanh toán.");
+          setStep("method");
+        }
       })
       .catch((err) => {
         setError(err.message);
-        setStep("error");
+        setStep("method");
       });
   }
 
@@ -121,7 +160,16 @@ export default function PayPage() {
   if (!user) return <Navigate to="/auth" replace />;
 
   if (step === "checking") return <p>Đang kiểm tra thông tin...</p>;
-  if (step === "creating") return <p>Đang thiết lập giao dịch...</p>;
+  if (step === "creating") {
+    return (
+      <section className="pay-result-page">
+        <div className="pay-result-card">
+          <div className="pay-result-spinner" />
+          <p>{selectedMethod === "bank_transfer" ? "Đang thiết lập giao dịch..." : `Đang chuyển sang ${selectedMethod === "vnpay" ? "VNPay" : "MoMo"}...`}</p>
+        </div>
+      </section>
+    );
+  }
 
   if (step === "prompt") {
     function translateStatus(s) {
@@ -196,8 +244,8 @@ export default function PayPage() {
               />
             </label>
             
-            <button className="btn btn-primary" onClick={startNewPayment} style={{ marginTop: "1rem" }}>
-              Tiếp tục thanh toán
+            <button className="btn btn-primary" onClick={goToMethodSelection} style={{ marginTop: "1rem" }}>
+              Chọn phương thức thanh toán
             </button>
             <Link to={detailLink} className="btn btn-ghost" style={{ textAlign: "center" }}>
               Hủy bỏ
@@ -208,9 +256,51 @@ export default function PayPage() {
     );
   }
 
-  if (error) return <p className="error">{error}</p>;
+  // ── Step: Choose payment method ──
+  if (step === "method") {
+    return (
+      <section className="stack">
+        <div className="card" style={{ maxWidth: 540, margin: "2rem auto", padding: "2rem" }}>
+          <h2 style={{ marginBottom: "0.5rem", textAlign: "center" }}>Chọn phương thức thanh toán</h2>
+          <p style={{ marginBottom: "1.5rem", fontSize: "0.95rem", color: "var(--ink-soft)", textAlign: "center" }}>
+            Chọn cách bạn muốn thanh toán cho đơn hàng này.
+          </p>
+
+          {error && <p className="error">{error}</p>}
+
+          <div className="payment-methods">
+            {PAYMENT_METHODS.map((m) => (
+              <button
+                key={m.id}
+                className="payment-method-card"
+                onClick={() => startPayment(m.id)}
+              >
+                <span className="payment-method-icon">{m.icon}</span>
+                <div className="payment-method-info">
+                  <strong>{m.label}</strong>
+                  <small>{m.desc}</small>
+                </div>
+                <span className="payment-method-arrow">→</span>
+              </button>
+            ))}
+          </div>
+
+          <button 
+            className="btn btn-ghost" 
+            onClick={() => { setError(""); setStep("contact"); }} 
+            style={{ marginTop: "1rem", width: "100%", textAlign: "center" }}
+          >
+            ← Quay lại sửa thông tin
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  if (error && !payment) return <p className="error">{error}</p>;
   if (!payment) return null;
 
+  // ── Step: Bank transfer details (existing flow) ──
   async function confirm() {
     try {
       const result = await api(`/payments/${payment.paymentId}/confirm`, { method: "POST" });

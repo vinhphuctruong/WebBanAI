@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import GemsPage from "./pages/GemsPage.jsx";
@@ -10,6 +10,7 @@ import AuthPage from "./pages/AuthPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import PurchasedProductsPage from "./pages/PurchasedProductsPage.jsx";
 import PayPage from "./pages/PayPage.jsx";
+import PayResultPage from "./pages/PayResultPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/purchased-products" element={<PurchasedProductsPage />} />
           <Route path="/pay/:itemType/:slug" element={<PayPage />} />
+          <Route path="/pay/result" element={<PayResultPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
