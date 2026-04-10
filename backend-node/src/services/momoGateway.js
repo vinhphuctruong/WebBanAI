@@ -20,17 +20,23 @@ import { env } from "../config/env.js";
 export async function createMomoPaymentUrl({ paymentId, orderId, amount, orderInfo }) {
   const cfg = env.payment.momo;
 
-  const requestId = paymentId;
-  const momoOrderId = `MLV_${paymentId}`;
+  // MoMo requires orderId max 50 chars
+  // Full UUID without dashes = 32 chars + "MLV" prefix = 35 chars (< 50 limit)
+  const cleanId = paymentId.replace(/-/g, "");
+  const requestId = cleanId;
+  const momoOrderId = `TMV${cleanId}`;
   const extraData = "";
   const requestType = "captureWallet";
   const autoCapture = true;
   const lang = "vi";
 
+  // Amount must be Long (integer), minimum 1000 VND for sandbox
+  const intAmount = Math.max(1000, Math.round(Number(amount)));
+
   // Build raw signature string (alphabetical order per MoMo spec)
   const rawSignature = [
     `accessKey=${cfg.accessKey}`,
-    `amount=${amount}`,
+    `amount=${intAmount}`,
     `extraData=${extraData}`,
     `ipnUrl=${cfg.ipnUrl}`,
     `orderId=${momoOrderId}`,
@@ -41,6 +47,8 @@ export async function createMomoPaymentUrl({ paymentId, orderId, amount, orderIn
     `requestType=${requestType}`,
   ].join("&");
 
+  console.log("[MoMo] Raw signature string:", rawSignature);
+
   const signature = crypto
     .createHmac("sha256", cfg.secretKey)
     .update(rawSignature)
@@ -50,7 +58,7 @@ export async function createMomoPaymentUrl({ paymentId, orderId, amount, orderIn
     partnerCode: cfg.partnerCode,
     accessKey: cfg.accessKey,
     requestId,
-    amount,
+    amount: intAmount,
     orderId: momoOrderId,
     orderInfo,
     redirectUrl: cfg.redirectUrl,
@@ -62,6 +70,8 @@ export async function createMomoPaymentUrl({ paymentId, orderId, amount, orderIn
     autoCapture,
   };
 
+  console.log("[MoMo] Request body:", JSON.stringify(requestBody, null, 2));
+
   const response = await fetch(`${cfg.apiEndpoint}/create`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -69,10 +79,11 @@ export async function createMomoPaymentUrl({ paymentId, orderId, amount, orderIn
   });
 
   const data = await response.json();
+  console.log("[MoMo] Response:", JSON.stringify(data, null, 2));
 
   if (data.resultCode !== 0) {
     console.error("[MoMo] Create payment failed:", data);
-    throw new Error(data.message || "MoMo payment creation failed");
+    throw new Error(data.message || `MoMo error code: ${data.resultCode}`);
   }
 
   return {
@@ -113,9 +124,9 @@ export function verifyMomoSignature(params) {
 
   const isValid = checkSignature === params.signature;
 
-  // Extract original paymentId from MoMo orderId (we prefixed with "MLV_")
+  // Extract original paymentId from MoMo orderId (we prefixed with "TMV")
   const rawOrderId = String(params.orderId || "");
-  const paymentId = rawOrderId.startsWith("MLV_") ? rawOrderId.slice(4) : params.requestId || rawOrderId;
+  const paymentId = rawOrderId.startsWith("TMV") ? rawOrderId.slice(3) : params.requestId || rawOrderId;
 
   return {
     isValid,

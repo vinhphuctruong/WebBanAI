@@ -34,16 +34,10 @@ const PAYMENT_METHODS = [
     desc: "Chuyển khoản thủ công, admin xác nhận",
   },
   {
-    id: "vnpay",
-    label: "VNPay",
-    icon: "💳",
-    desc: "ATM / Visa / MasterCard / QR Code",
-  },
-  {
     id: "momo",
     label: "Ví MoMo",
     icon: "📱",
-    desc: "Thanh toán bằng ví MoMo",
+    desc: "Thanh toán tự động bằng ví MoMo",
   },
 ];
 

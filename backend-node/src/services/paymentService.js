@@ -124,16 +124,23 @@ export async function createPayment({ userId, itemType, slug, quantity = 1, cust
  * This is the server-to-server flow — no user/admin action needed.
  */
 export async function autoConfirmPayment(paymentId, transactionRef = "") {
+  // paymentId may be a UUID with dashes OR a flat hex string (from MoMo)
+  // Reconstruct UUID format if needed: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  let lookupId = paymentId;
+  if (paymentId && paymentId.length === 32 && !paymentId.includes("-")) {
+    lookupId = `${paymentId.slice(0,8)}-${paymentId.slice(8,12)}-${paymentId.slice(12,16)}-${paymentId.slice(16,20)}-${paymentId.slice(20)}`;
+  }
+
   const result = await query(
     `SELECT p.id, p.user_id, p.order_id, p.status, o.amount, o.item_type, o.item_slug
      FROM payments p
      JOIN orders o ON o.id = p.order_id
      WHERE p.id = $1`,
-    [paymentId]
+    [lookupId]
   );
   const row = result.rows[0];
   if (!row) {
-    console.warn(`[autoConfirm] Payment not found: ${paymentId}`);
+    console.warn(`[autoConfirm] Payment not found: ${lookupId} (raw: ${paymentId})`);
     return false;
   }
 
