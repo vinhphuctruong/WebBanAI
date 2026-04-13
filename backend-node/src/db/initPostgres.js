@@ -52,9 +52,9 @@ export async function initPostgres() {
   await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_expires_at TIMESTAMPTZ`);
 
   await upsertUser({
-    email: "admin@maulamvideo.com",
-    fullName: "Admin MLV",
-    password: "admin123",
+    email: "admin@tmai.com",
+    fullName: "Admin TMV",
+    password: "TMV@123456789",
     role: "admin",
     phone: "0900000000"
   });
