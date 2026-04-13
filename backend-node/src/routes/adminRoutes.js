@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { requireAuth, requireRole } from "../middlewares/auth.js";
-import { listUsers } from "../services/userService.js";
+import { listUsers, findUserById, createUser, updateUserRole, deleteUser, adminUpdateUser } from "../services/userService.js";
 import { dashboardSummary, listOrders, listPayments } from "../services/paymentService.js";
 import { GemModel } from "../models/Gem.js";
 import { AiToolModel } from "../models/AiTool.js";
@@ -26,6 +26,83 @@ router.get("/dashboard", async (_req, res) => {
 router.get("/users", async (_req, res) => {
   const users = await listUsers();
   return res.json(users);
+});
+
+router.post("/users", async (req, res) => {
+  try {
+    const { name, email, password, phone, role } = req.body || {};
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Can co ten, email va mat khau" });
+    }
+    const user = await createUser({
+      name: String(name).trim(),
+      email: String(email).trim().toLowerCase(),
+      password: String(password),
+      phone: phone ? String(phone).trim() : null
+    });
+    if (role && ["admin", "staff", "sale", "user"].includes(role)) {
+      const updated = await updateUserRole(user.id, role);
+      return res.status(201).json(updated);
+    }
+    return res.status(201).json(user);
+  } catch (err) {
+    const isDuplicate = err.message?.includes("duplicate") || err.message?.includes("da ton tai");
+    return res.status(isDuplicate ? 409 : 400).json({ message: isDuplicate ? "Email da ton tai" : (err.message || "Tao user that bai") });
+  }
+});
+
+router.put("/users/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await findUserById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Khong tim thay nguoi dung" });
+    }
+
+    const updates = {};
+    if (req.body?.name !== undefined) updates.name = String(req.body.name).trim();
+    if (req.body?.phone !== undefined) updates.phone = String(req.body.phone).trim();
+    if (req.body?.role !== undefined) {
+      const role = String(req.body.role).trim();
+      if (!["admin", "staff", "sale", "user"].includes(role)) {
+        return res.status(400).json({ message: "Role khong hop le" });
+      }
+      updates.role = role;
+    }
+    if (req.body?.password !== undefined) {
+      const pw = String(req.body.password);
+      if (pw.length < 6) {
+        return res.status(400).json({ message: "Mat khau phai co it nhat 6 ky tu" });
+      }
+      updates.password = pw;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: "Khong co du lieu de cap nhat" });
+    }
+
+    const updated = await adminUpdateUser(userId, updates);
+    return res.json(updated);
+  } catch (err) {
+    return res.status(400).json({ message: err.message || "Cap nhat user that bai" });
+  }
+});
+
+router.delete("/users/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await findUserById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Khong tim thay nguoi dung" });
+    }
+    if (user.role === "admin") {
+      return res.status(403).json({ message: "Khong the xoa tai khoan admin" });
+    }
+    await deleteUser(userId);
+    return res.json({ message: "Da xoa nguoi dung thanh cong", id: userId });
+  } catch (err) {
+    return res.status(400).json({ message: err.message || "Xoa user that bai" });
+  }
 });
 
 router.get("/orders", async (_req, res) => {

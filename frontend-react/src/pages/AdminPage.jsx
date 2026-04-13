@@ -96,6 +96,11 @@ export default function AdminPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [activeTab, setActiveTab] = useState("dashboard");
 
+  /* ── User CRUD state ── */
+  const [userForm, setUserForm] = useState({ name: "", email: "", phone: "", role: "user", password: "" });
+  const [editingUser, setEditingUser] = useState(null);
+  const [savingUser, setSavingUser] = useState(false);
+
   const isGem = productType === "gem";
 
   async function loadAdminData() {
@@ -220,6 +225,77 @@ export default function AdminPage() {
       const endpoint = type === "gem" ? `/admin/catalog/gems/${slug}` : `/admin/catalog/ai-tools/${slug}`;
       await api(endpoint, { method: "DELETE" });
       setInfo(`Đã xóa "${name}" thành công.`);
+      await loadAdminData();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  /* ── User CRUD handlers ── */
+  function updateUserField(field, value) {
+    setUserForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function resetUserForm() {
+    setUserForm({ name: "", email: "", phone: "", role: "user", password: "" });
+    setEditingUser(null);
+  }
+
+  function startEditUser(u) {
+    setEditingUser(u);
+    setUserForm({ name: u.name || "", email: u.email || "", phone: u.phone || "", role: u.role || "user", password: "" });
+  }
+
+  async function saveUser(event) {
+    event.preventDefault();
+    setError("");
+    setInfo("");
+    setSavingUser(true);
+    try {
+      if (editingUser) {
+        const payload = {};
+        if (userForm.name && userForm.name !== editingUser.name) payload.name = userForm.name;
+        if (userForm.phone !== (editingUser.phone || "")) payload.phone = userForm.phone;
+        if (userForm.role !== editingUser.role) payload.role = userForm.role;
+        if (userForm.password) payload.password = userForm.password;
+        if (Object.keys(payload).length === 0) {
+          throw new Error("Kh\u00f4ng c\u00f3 thay \u0111\u1ed5i n\u00e0o.");
+        }
+        await api(`/admin/users/${editingUser.id}`, { method: "PUT", body: JSON.stringify(payload) });
+        setInfo("\u0110\u00e3 c\u1eadp nh\u1eadt ng\u01b0\u1eddi d\u00f9ng th\u00e0nh c\u00f4ng.");
+      } else {
+        if (!userForm.name || !userForm.email || !userForm.password) {
+          throw new Error("Vui l\u00f2ng nh\u1eadp t\u00ean, email v\u00e0 m\u1eadt kh\u1ea9u.");
+        }
+        await api("/admin/users", {
+          method: "POST",
+          body: JSON.stringify({
+            name: userForm.name,
+            email: userForm.email,
+            password: userForm.password,
+            phone: userForm.phone || null,
+            role: userForm.role
+          })
+        });
+        setInfo("\u0110\u00e3 th\u00eam ng\u01b0\u1eddi d\u00f9ng m\u1edbi th\u00e0nh c\u00f4ng.");
+      }
+      resetUserForm();
+      await loadAdminData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingUser(false);
+    }
+  }
+
+  async function deleteUserById(u) {
+    const confirmed = window.confirm(`B\u1ea1n c\u00f3 ch\u1eafc mu\u1ed1n x\u00f3a ng\u01b0\u1eddi d\u00f9ng "${u.name}" (${u.email})?\nH\u00e0nh \u0111\u1ed9ng n\u00e0y kh\u00f4ng th\u1ec3 ho\u00e0n t\u00e1c!`);
+    if (!confirmed) return;
+    setError("");
+    setInfo("");
+    try {
+      await api(`/admin/users/${u.id}`, { method: "DELETE" });
+      setInfo(`\u0110\u00e3 x\u00f3a "${u.name}" th\u00e0nh c\u00f4ng.`);
       await loadAdminData();
     } catch (err) {
       setError(err.message);
@@ -633,14 +709,104 @@ export default function AdminPage() {
 
       {activeTab === 'users' && (
       <article className="card">
-        <h2>Người dùng</h2>
+        <div className="row-head admin-add-head">
+          <h2>{editingUser ? "Chỉnh sửa người dùng" : "Quản lý người dùng"}</h2>
+          {editingUser && <span>Đang sửa: {editingUser.email}</span>}
+        </div>
+
+        <form className="form admin-form-grid" onSubmit={saveUser}>
+          <label>
+            Họ tên
+            <input
+              value={userForm.name}
+              onChange={(e) => updateUserField("name", e.target.value)}
+              placeholder="Nguyễn Văn A"
+              required={!editingUser}
+            />
+          </label>
+          <label>
+            Email
+            <input
+              type="email"
+              value={userForm.email}
+              onChange={(e) => updateUserField("email", e.target.value)}
+              placeholder="user@email.com"
+              required={!editingUser}
+              disabled={!!editingUser}
+            />
+          </label>
+          <label>
+            SĐT
+            <input
+              value={userForm.phone}
+              onChange={(e) => updateUserField("phone", e.target.value)}
+              placeholder="0912345678"
+            />
+          </label>
+          <label>
+            Vai trò
+            <select
+              value={userForm.role}
+              onChange={(e) => updateUserField("role", e.target.value)}
+              style={{ width: '100%', borderRadius: '10px', border: '1px solid var(--line)', background: 'var(--surface-raised)', color: 'var(--ink)', padding: '0.6rem 0.7rem', font: 'inherit' }}
+            >
+              <option value="user">User</option>
+              <option value="staff">Staff</option>
+              <option value="sale">Sale</option>
+              <option value="admin">Admin</option>
+            </select>
+          </label>
+          <label className="admin-span-all">
+            {editingUser ? "Mật khẩu mới (bỏ trống nếu không đổi)" : "Mật khẩu"}
+            <input
+              type="password"
+              value={userForm.password}
+              onChange={(e) => updateUserField("password", e.target.value)}
+              placeholder={editingUser ? "Để trống nếu không đổi" : "Mật khẩu (tối thiểu 6 ký tự)"}
+              required={!editingUser}
+              minLength={editingUser ? undefined : 6}
+            />
+          </label>
+          <div className="admin-span-all admin-inline-row">
+            <button type="submit" className="btn btn-primary" disabled={savingUser}>
+              {savingUser ? "Đang lưu..." : editingUser ? "Lưu chỉnh sửa" : "Thêm người dùng"}
+            </button>
+            <button type="button" className="btn btn-soft" onClick={resetUserForm}>
+              {editingUser ? "Hủy chỉnh sửa" : "Nhập lại"}
+            </button>
+          </div>
+        </form>
+
+        <h3 style={{ marginTop: '0.8rem' }}>Danh sách người dùng ({users.length})</h3>
         <div className="table-wrap">
           <table className="table">
-            <thead><tr><th>Email</th><th>Tên</th><th>Vai trò</th></tr></thead>
+            <thead><tr><th>Email</th><th>Tên</th><th>SĐT</th><th>Vai trò</th><th>Thao tác</th></tr></thead>
             <tbody>
               {users.map((u) => (
-                <tr key={u.id}><td>{u.email}</td><td>{u.name}</td><td>{u.role}</td></tr>
+                <tr key={u.id}>
+                  <td>{u.email}</td>
+                  <td>{u.name}</td>
+                  <td>{u.phone || "-"}</td>
+                  <td>
+                    <span className={`user-role-badge role-${u.role}`}>{u.role}</span>
+                  </td>
+                  <td>
+                    <div className="admin-action-row">
+                      <button type="button" className="btn btn-outline" onClick={() => startEditUser(u)}>
+                        Sửa
+                      </button>
+                      {u.role !== "admin" && (
+                        <button type="button" className="btn btn-danger-outline" onClick={() => deleteUserById(u)}>
+                          Xóa
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
               ))}
+              {users.length === 0 && (
+                <tr><td colSpan="5">Chưa có người dùng nào.</td></tr>
+              )}
             </tbody>
           </table>
         </div>

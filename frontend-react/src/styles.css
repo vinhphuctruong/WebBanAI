@@ -702,6 +702,40 @@ p {
   border-color: var(--danger);
 }
 
+.user-role-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.role-admin {
+  color: #bfe8ff;
+  background: color-mix(in srgb, var(--brand) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand) 45%, transparent);
+}
+
+.role-staff {
+  color: #4af9a0;
+  background: color-mix(in srgb, #4af9a0 14%, transparent);
+  border: 1px solid color-mix(in srgb, #4af9a0 35%, transparent);
+}
+
+.role-sale {
+  color: #ffb347;
+  background: color-mix(in srgb, #ffb347 14%, transparent);
+  border: 1px solid color-mix(in srgb, #ffb347 35%, transparent);
+}
+
+.role-user {
+  color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--muted) 25%, transparent);
+}
+
 .catalog-main {
   min-width: 0;
 }

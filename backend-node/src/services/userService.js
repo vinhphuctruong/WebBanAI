@@ -92,6 +92,40 @@ export async function updateUserRole(userId, role) {
   return findUserById(userId);
 }
 
+export async function adminUpdateUser(userId, updates) {
+  const sets = [];
+  const params = [userId];
+  let idx = 2;
+
+  if (updates.name !== undefined) {
+    sets.push(`full_name = $${idx++}`);
+    params.push(updates.name);
+  }
+  if (updates.phone !== undefined) {
+    sets.push(`phone = $${idx++}`);
+    params.push(updates.phone);
+  }
+  if (updates.role !== undefined) {
+    sets.push(`role = $${idx++}`);
+    params.push(updates.role);
+  }
+  if (updates.password !== undefined) {
+    const passwordHash = await bcrypt.hash(updates.password, 10);
+    sets.push(`password_hash = $${idx++}`);
+    params.push(passwordHash);
+  }
+
+  if (sets.length === 0) return findUserById(userId);
+
+  sets.push("updated_at = NOW()");
+  await query(`UPDATE users SET ${sets.join(", ")} WHERE id = $1`, params);
+  return findUserById(userId);
+}
+
+export async function deleteUser(userId) {
+  await query(`DELETE FROM users WHERE id = $1`, [userId]);
+}
+
 export async function getReferralSummary(userId) {
   const user = await findUserById(userId);
   if (!user) return null;
