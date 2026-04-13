@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { api, money } from "../lib/api.js";
+import { api, apiUpload, money, API_BASE } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
 function getYouTubeId(url) {
@@ -90,6 +90,7 @@ export default function AdminPage() {
   const [info, setInfo] = useState("");
   const [approvingPaymentId, setApprovingPaymentId] = useState("");
   const [savingProduct, setSavingProduct] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [productType, setProductType] = useState("gem");
   const [productForm, setProductForm] = useState(initialProductForm);
   const [editingItem, setEditingItem] = useState(null);
@@ -155,6 +156,39 @@ export default function AdminPage() {
 
   function fillSlugFromName() {
     updateProductField("slug", toSlug(productForm.name));
+  }
+
+  async function handleImageUpload(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError("File ảnh quá lớn (tối đa 5MB)");
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Chỉ chấp nhận file ảnh (JPEG, PNG, GIF, WebP, SVG)");
+      return;
+    }
+
+    setUploadingImage(true);
+    setError("");
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const result = await apiUpload("/upload/image", formData);
+      const backendOrigin = API_BASE.replace(/\/api\/?$/, "");
+      const fullUrl = result.url.startsWith("http") ? result.url : `${backendOrigin}${result.url}`;
+      updateProductField("imageUrl", fullUrl);
+      setInfo("Tải ảnh lên thành công!");
+    } catch (err) {
+      setError(err.message || "Tải ảnh thất bại");
+    } finally {
+      setUploadingImage(false);
+    }
   }
 
   function startEditGem(gem) {
@@ -448,14 +482,47 @@ export default function AdminPage() {
             </>
           )}
 
-          <label className="admin-span-all">
-            Ảnh đại diện URL
+          <div className="admin-span-all admin-image-upload-section">
+            <span className="admin-upload-label">Ảnh đại diện sản phẩm</span>
+
+            {productForm.imageUrl && (
+              <div className="admin-image-preview">
+                <img
+                  src={productForm.imageUrl}
+                  alt="Preview ảnh đại diện"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              </div>
+            )}
+
+            <div className="admin-upload-row">
+              <label className="btn btn-soft admin-upload-btn">
+                {uploadingImage ? "⏳ Đang tải..." : "📁 Chọn ảnh từ máy"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                  style={{ display: 'none' }}
+                />
+              </label>
+              {productForm.imageUrl && (
+                <button
+                  type="button"
+                  className="btn btn-outline admin-remove-img-btn"
+                  onClick={() => updateProductField("imageUrl", "")}
+                >✕ Xóa ảnh</button>
+              )}
+            </div>
+
+            <span className="admin-upload-or">— hoặc nhập URL —</span>
+
             <input
               value={productForm.imageUrl}
               onChange={(event) => updateProductField("imageUrl", event.target.value)}
               placeholder="https://..."
             />
-          </label>
+          </div>
 
           <div className="admin-span-all admin-inline-row">
             <button type="submit" className="btn btn-primary" disabled={savingProduct}>

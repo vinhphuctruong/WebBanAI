@@ -1,4 +1,4 @@
-﻿const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080/api";
+export const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080/api";
 
 export async function api(path, options = {}) {
   const token = localStorage.getItem("mlv_token") || "";
@@ -19,6 +19,26 @@ export async function api(path, options = {}) {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(payload.message || `API error: ${response.status}`);
+  }
+  return payload;
+}
+
+export async function apiUpload(path, formData) {
+  const token = localStorage.getItem("mlv_token") || "";
+  const headers = {};
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers,
+    body: formData
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.message || `Upload error: ${response.status}`);
   }
   return payload;
 }

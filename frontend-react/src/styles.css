@@ -600,6 +600,84 @@ p {
   white-space: nowrap;
 }
 
+/* ── Admin Image Upload ── */
+.admin-image-upload-section {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.admin-upload-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.admin-image-preview {
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--brand) 40%, var(--line));
+  background: var(--surface-soft);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.2s ease;
+}
+
+.admin-image-preview:hover {
+  border-color: var(--brand);
+}
+
+.admin-image-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 240px;
+  object-fit: cover;
+}
+
+.admin-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.admin-upload-btn {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 1rem !important;
+  border: 1.5px dashed color-mix(in srgb, var(--brand) 50%, var(--line)) !important;
+  background: color-mix(in srgb, var(--brand) 6%, var(--surface-raised)) !important;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+
+.admin-upload-btn:hover {
+  border-color: var(--brand) !important;
+  background: color-mix(in srgb, var(--brand) 14%, var(--surface-raised)) !important;
+  transform: translateY(-1px);
+}
+
+.admin-remove-img-btn {
+  color: var(--danger) !important;
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--line)) !important;
+  font-size: 0.85rem;
+}
+
+.admin-remove-img-btn:hover {
+  background: color-mix(in srgb, var(--danger) 12%, transparent) !important;
+}
+
+.admin-upload-or {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
 .catalog-main {
   min-width: 0;
 }
