@@ -210,6 +210,22 @@ export default function AdminPage() {
     resetProductForm();
   }
 
+  async function deleteProduct(type, slug, name) {
+    const confirmed = window.confirm(`Bạn có chắc muốn xóa "${name}"?\nHành động này không thể hoàn tác!`);
+    if (!confirmed) return;
+
+    setError("");
+    setInfo("");
+    try {
+      const endpoint = type === "gem" ? `/admin/catalog/gems/${slug}` : `/admin/catalog/ai-tools/${slug}`;
+      await api(endpoint, { method: "DELETE" });
+      setInfo(`Đã xóa "${name}" thành công.`);
+      await loadAdminData();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   async function saveProduct(event) {
     event.preventDefault();
     setError("");
@@ -551,9 +567,14 @@ export default function AdminPage() {
                   <td>{money(gem.originalPrice)}</td>
                   <td>{gem.categoryId || "-"}</td>
                   <td>
-                    <button type="button" className="btn btn-outline" onClick={() => startEditGem(gem)}>
-                      Chỉnh sửa
-                    </button>
+                    <div className="admin-action-row">
+                      <button type="button" className="btn btn-outline" onClick={() => startEditGem(gem)}>
+                        Chỉnh sửa
+                      </button>
+                      <button type="button" className="btn btn-danger-outline" onClick={() => deleteProduct("gem", gem.slug, gem.title)}>
+                        Xóa
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -581,9 +602,14 @@ export default function AdminPage() {
                   <td>{tool.availableCount}</td>
                   <td>{tool.category || "-"}</td>
                   <td>
-                    <button type="button" className="btn btn-outline" onClick={() => startEditTool(tool)}>
-                      Chỉnh sửa
-                    </button>
+                    <div className="admin-action-row">
+                      <button type="button" className="btn btn-outline" onClick={() => startEditTool(tool)}>
+                        Chỉnh sửa
+                      </button>
+                      <button type="button" className="btn btn-danger-outline" onClick={() => deleteProduct("tool", tool.slug, tool.name)}>
+                        Xóa
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

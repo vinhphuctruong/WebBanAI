@@ -434,4 +434,28 @@ router.put("/inventory/ai-tools/:toolId", async (req, res) => {
   return res.json(tool);
 });
 
+router.delete("/catalog/gems/:slug", async (req, res) => {
+  try {
+    const gem = await GemModel.findOneAndDelete({ slug: req.params.slug }).lean();
+    if (!gem) {
+      return res.status(404).json({ message: "Khong tim thay gem" });
+    }
+    return res.json({ message: "Da xoa gem thanh cong", slug: gem.slug });
+  } catch (err) {
+    return res.status(400).json({ message: err.message || "Xoa gem that bai" });
+  }
+});
+
+router.delete("/catalog/ai-tools/:slug", async (req, res) => {
+  try {
+    const tool = await AiToolModel.findOneAndDelete({ slug: req.params.slug }).lean();
+    if (!tool) {
+      return res.status(404).json({ message: "Khong tim thay ai tool" });
+    }
+    return res.json({ message: "Da xoa ai tool thanh cong", slug: tool.slug });
+  } catch (err) {
+    return res.status(400).json({ message: err.message || "Xoa ai tool that bai" });
+  }
+});
+
 export default router;
