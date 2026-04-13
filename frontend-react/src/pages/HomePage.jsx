@@ -272,8 +272,7 @@ export default function HomePage() {
   );
 
   const freePromptItems = useMemo(() => {
-    const free = gemItems.filter((item) => Number(item.price || 0) === 0);
-    return (free.length > 0 ? free : [...gemItems].sort((a, b) => a.price - b.price)).slice(0, 4);
+    return gemItems.filter((item) => Number(item.price || 0) === 0).slice(0, 4);
   }, [gemItems]);
 
   const mainGemItems = useMemo(() =>
@@ -381,6 +380,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      {freePromptItems.length > 0 && (
       <section className="mlv-section" id="free-prompts">
         <header className="mlv-section-head">
           <div className="mlv-section-title-wrap">
@@ -406,6 +406,7 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+      )}
 
       <section className="mlv-section" id="main-gems">
         <header className="mlv-section-head">
