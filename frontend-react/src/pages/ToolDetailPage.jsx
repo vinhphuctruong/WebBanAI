@@ -106,6 +106,8 @@ export default function ToolDetailPage() {
 
   const hasVideoUrl = Boolean(getYouTubeId(tool.videoUrl));
   const hasTutorial = Boolean(getYouTubeId(tool.tutorialUrl));
+  const isPaidTool = Number(tool.accountPrice || 0) > 0;
+  const canViewTutorialVideo = !isPaidTool || Boolean(purchasedInfo);
 
   return (
     <section className="stack">
@@ -136,12 +138,27 @@ export default function ToolDetailPage() {
           )}
 
           {/* Video Hướng dẫn */}
-          {hasTutorial && (
+          {hasTutorial && canViewTutorialVideo && (
             <YouTubePlayer
               url={tool.tutorialUrl}
               label="🎓 Video Hướng Dẫn Sử Dụng"
               accentColor="#133e95"
             />
+          )}
+
+          {hasTutorial && !canViewTutorialVideo && (
+            <div
+              style={{
+                marginTop: "1rem",
+                padding: "1rem",
+                background: "rgba(19, 62, 149, 0.1)",
+                border: "1px dashed var(--brand)",
+                borderRadius: "10px",
+              }}
+            >
+              <p><strong>Video hướng dẫn đã bị khóa.</strong></p>
+              <p>Vui lòng mua sản phẩm để mở khóa video hướng dẫn sử dụng.</p>
+            </div>
           )}
 
           {Number(tool.accountPrice || 0) > 0 && (
@@ -206,7 +223,7 @@ export default function ToolDetailPage() {
                   📹 Xem demo trên YouTube
                 </a>
               )}
-              {hasTutorial && (
+              {hasTutorial && canViewTutorialVideo && (
                 <a
                   href={tool.tutorialUrl}
                   target="_blank"
@@ -215,6 +232,9 @@ export default function ToolDetailPage() {
                 >
                   🎓 Xem hướng dẫn trên YouTube
                 </a>
+              )}
+              {hasTutorial && !canViewTutorialVideo && (
+                <p className="yt-sidebar-link">🔒 Mua sản phẩm để xem hướng dẫn</p>
               )}
             </div>
           )}

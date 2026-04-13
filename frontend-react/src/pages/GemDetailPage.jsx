@@ -105,6 +105,8 @@ export default function GemDetailPage() {
 
   if (error) return <p className="error">{error}</p>;
   if (!gem) return <p>Đang tải...</p>;
+  const isPaidGem = Number(gem.price || 0) > 0;
+  const canViewTutorialVideo = !isPaidGem || Boolean(purchasedContent);
 
   function copyPrompt() {
     if (purchasedContent?.promptContent) {
@@ -123,12 +125,19 @@ export default function GemDetailPage() {
           <h1>{gem.title}</h1>
           <p>{gem.description}</p>
 
-          {gem.tutorialVideo && (
+          {gem.tutorialVideo && canViewTutorialVideo && (
             <YouTubePlayer
               url={gem.tutorialVideo}
               label="🎓 Video Hướng Dẫn Sử Dụng"
               accentColor="#133e95"
             />
+          )}
+
+          {gem.tutorialVideo && !canViewTutorialVideo && (
+            <div style={{ marginTop: "1rem", padding: "1rem", background: "rgba(19, 62, 149, 0.1)", border: "1px dashed var(--brand)", borderRadius: "10px" }}>
+              <p><strong>Video hướng dẫn đã bị khóa.</strong></p>
+              <p>Vui lòng mua sản phẩm để mở khóa video hướng dẫn sử dụng.</p>
+            </div>
           )}
           
           {purchasedContent ? (
