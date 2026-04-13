@@ -72,11 +72,21 @@ export async function createMomoPaymentUrl({ paymentId, orderId, amount, orderIn
 
   console.log("[MoMo] Request body:", JSON.stringify(requestBody, null, 2));
 
-  const response = await fetch(`${cfg.apiEndpoint}/create`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody),
-  });
+  // Add timeout to prevent hanging forever
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  let response;
+  try {
+    response = await fetch(`${cfg.apiEndpoint}/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const data = await response.json();
   console.log("[MoMo] Response:", JSON.stringify(data, null, 2));

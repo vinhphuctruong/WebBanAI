@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
   referred_by_code VARCHAR(30),
   available_balance INTEGER NOT NULL DEFAULT 0,
   total_earnings INTEGER NOT NULL DEFAULT 0,
+  is_premium BOOLEAN NOT NULL DEFAULT FALSE,
+  premium_expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

@@ -172,9 +172,15 @@ export default function ToolDetailPage() {
           </h2>
           <p>Tồn kho: {tool.availableCount}</p>
           {Number(tool.accountPrice || 0) > 0 && tool.availableCount > 0 ? (
-            <Link className="btn btn-primary" to={`/pay/ai/${tool.slug}`}>
-              Mua ngay
-            </Link>
+            purchasedInfo ? (
+              <button type="button" className="btn btn-ghost" disabled style={{ color: "var(--brand)", opacity: 1, cursor: "default" }}>
+                👑 Đã mở khóa
+              </button>
+            ) : (
+              <Link className="btn btn-primary" to={`/pay/ai/${tool.slug}`}>
+                Mua ngay
+              </Link>
+            )
           ) : Number(tool.accountPrice || 0) === 0 ? (
             <a
               href={tool.websiteUrl || tool.tutorialUrl || "#"}

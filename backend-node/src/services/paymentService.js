@@ -3,6 +3,7 @@ import { query, withTransaction } from "../config/postgres.js";
 import { env } from "../config/env.js";
 import { GemModel } from "../models/Gem.js";
 import { AiToolModel } from "../models/AiTool.js";
+import { PricingModel } from "../models/Pricing.js";
 import { rewardReferralIfAny } from "./userService.js";
 
 let orderContactColumnsReady = false;
@@ -33,6 +34,16 @@ async function loadProduct(type, slug) {
   }
   if (type === "ai_tool") {
     return AiToolModel.findOne({ slug }).lean();
+  }
+  if (type === "premium") {
+    const pricing = await PricingModel.findOne().lean();
+    if (!pricing) return null;
+    const price = slug === "yearly" ? pricing.yearly : pricing.monthly;
+    return {
+      title: `Gói Premium ${slug === "yearly" ? "1 Năm" : "1 Tháng"}`,
+      slug,
+      price: price || 0
+    };
   }
   return null;
 }
@@ -151,7 +162,7 @@ export async function autoConfirmPayment(paymentId, transactionRef = "") {
   await withTransaction(async (client) => {
     await client.query(
       `UPDATE payments SET status = 'success', payment_url = $2, updated_at = NOW() WHERE id = $1`,
-      [paymentId, transactionRef]
+      [lookupId, transactionRef]
     );
     await client.query(
       `UPDATE orders SET status = 'paid', updated_at = NOW() WHERE id = $1`,
@@ -163,6 +174,15 @@ export async function autoConfirmPayment(paymentId, transactionRef = "") {
         { slug: row.item_slug },
         { $inc: { availableCount: -1 } }
       );
+    } else if (row.item_type === "premium") {
+      const months = row.item_slug === "yearly" ? 12 : 1;
+      await client.query(
+        `UPDATE users 
+         SET is_premium = true, 
+             premium_expires_at = GREATEST(COALESCE(premium_expires_at, NOW()), NOW()) + INTERVAL '${months} months'
+         WHERE id = $1`,
+        [row.user_id]
+      );
     }
 
     await rewardReferralIfAny({
@@ -173,7 +193,7 @@ export async function autoConfirmPayment(paymentId, transactionRef = "") {
     });
   });
 
-  console.info(`[autoConfirm] Payment ${paymentId} confirmed via gateway (txn: ${transactionRef})`);
+  console.info(`[autoConfirm] Payment ${lookupId} confirmed via gateway (txn: ${transactionRef})`);
   return true;
 }
 
@@ -297,6 +317,15 @@ export async function confirmPayment(paymentId, requesterRole, requesterUserId) 
       await AiToolModel.updateOne(
         { slug: row.item_slug },
         { $inc: { availableCount: -1 } }
+      );
+    } else if (row.item_type === "premium") {
+      const months = row.item_slug === "yearly" ? 12 : 1;
+      await client.query(
+        `UPDATE users 
+         SET is_premium = true, 
+             premium_expires_at = GREATEST(COALESCE(premium_expires_at, NOW()), NOW()) + INTERVAL('${months} months')
+         WHERE id = $1`,
+        [row.user_id]
       );
     }
 

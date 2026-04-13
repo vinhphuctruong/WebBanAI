@@ -20,7 +20,9 @@ export default function PayResultPage() {
 
   // Determine actual provider and payment ID
   const actualProvider = provider || (momoResultCode !== null ? "momo" : "");
-  const actualPaymentId = paymentId || (momoOrderId.startsWith("MLV_") ? momoOrderId.slice(4) : "");
+  const actualPaymentId =
+    paymentId ||
+    (momoOrderId.startsWith("TMV") ? momoOrderId.slice(3) : momoOrderId.startsWith("MLV_") ? momoOrderId.slice(4) : "");
   const isSuccess = status === "success" || momoResultCode === "0";
 
   useEffect(() => {

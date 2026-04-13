@@ -1,4 +1,4 @@
-﻿import bcrypt from "bcryptjs";
+import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { query, withTransaction } from "../config/postgres.js";
 
@@ -14,6 +14,8 @@ function rowToUser(row) {
     referredByCode: row.referred_by_code,
     availableBalance: row.available_balance,
     totalEarnings: row.total_earnings,
+    isPremium: row.is_premium,
+    premiumExpiresAt: row.premium_expires_at,
     createdAt: row.created_at
   };
 }
@@ -26,7 +28,7 @@ function generateReferralCode(email) {
 
 export async function listUsers() {
   const result = await query(
-    `SELECT id, email, full_name, phone, role, referral_code, referred_by_code, available_balance, total_earnings, created_at
+    `SELECT id, email, full_name, phone, role, referral_code, referred_by_code, available_balance, total_earnings, is_premium, premium_expires_at, created_at
      FROM users ORDER BY created_at DESC`
   );
   return result.rows.map(rowToUser);
@@ -34,7 +36,7 @@ export async function listUsers() {
 
 export async function findUserById(userId) {
   const result = await query(
-    `SELECT id, email, full_name, phone, role, referral_code, referred_by_code, available_balance, total_earnings, created_at
+    `SELECT id, email, full_name, phone, role, referral_code, referred_by_code, available_balance, total_earnings, is_premium, premium_expires_at, created_at
      FROM users WHERE id = $1`,
     [userId]
   );
@@ -43,7 +45,7 @@ export async function findUserById(userId) {
 
 export async function findUserRecordByEmail(email) {
   const result = await query(
-    `SELECT id, email, password_hash, full_name, phone, role, referral_code, referred_by_code, available_balance, total_earnings, created_at
+    `SELECT id, email, password_hash, full_name, phone, role, referral_code, referred_by_code, available_balance, total_earnings, is_premium, premium_expires_at, created_at
      FROM users WHERE email = $1`,
     [email.toLowerCase()]
   );

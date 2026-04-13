@@ -28,6 +28,12 @@ function validateContactForm(contactForm) {
 
 const PAYMENT_METHODS = [
   {
+    id: "vnpay",
+    label: "VNPay",
+    icon: "💳",
+    desc: "Thanh toán tự động qua cổng VNPay",
+  },
+  {
     id: "bank_transfer",
     label: "Chuyển khoản ngân hàng",
     icon: "🏦",

@@ -47,6 +47,10 @@ export async function initPostgres() {
   await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(30)`);
   await query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email VARCHAR(190)`);
 
+  // Ensure premium columns exist for existing users
+  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_premium BOOLEAN NOT NULL DEFAULT FALSE`);
+  await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS premium_expires_at TIMESTAMPTZ`);
+
   await upsertUser({
     email: "admin@maulamvideo.com",
     fullName: "Admin MLV",

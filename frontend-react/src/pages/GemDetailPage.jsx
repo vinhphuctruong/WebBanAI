@@ -162,7 +162,13 @@ export default function GemDetailPage() {
         <div className="card sticky">
           <h2>{gem.price === 0 ? "Miễn phí" : money(gem.price)}</h2>
           {gem.price > 0 ? (
-            <Link className="btn btn-primary" to={`/pay/gem/${gem.slug}`}>Mua ngay</Link>
+            purchasedContent ? (
+              <button type="button" className="btn btn-ghost" disabled style={{ color: "var(--brand)", opacity: 1, cursor: "default" }}>
+                👑 Đã mở khóa
+              </button>
+            ) : (
+              <Link className="btn btn-primary" to={`/pay/gem/${gem.slug}`}>Mua ngay</Link>
+            )
           ) : (
             <a href={gem.chatbotLink || gem.workflowLink || "#"} className="btn btn-primary" target="_blank" rel="noreferrer">Nhận miễn phí</a>
           )}

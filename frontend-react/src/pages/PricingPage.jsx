@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api, money } from "../lib/api.js";
 
 export default function PricingPage() {
@@ -20,11 +21,13 @@ export default function PricingPage() {
           <h2>Gói tháng</h2>
           <p className="big">{money(pricing.monthly)}</p>
           <p>Dùng cho team nhỏ muốn test nhanh.</p>
+          <Link to="/pay/premium/monthly" className="btn btn-primary" style={{ marginTop: "1rem" }}>Mua ngay</Link>
         </article>
         <article className="card focus">
           <h2>Gói năm</h2>
           <p className="big">{money(pricing.yearly)}</p>
           <p>Tiết kiệm {pricing.yearlySavingsPercent}% so với gói tháng.</p>
+          <Link to="/pay/premium/yearly" className="btn btn-primary" style={{ marginTop: "1rem" }}>Mua ngay</Link>
         </article>
       </div>
       <article className="card">

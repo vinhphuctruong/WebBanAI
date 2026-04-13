@@ -151,8 +151,10 @@ router.get("/purchases/gems/:slug", rateLimitProtectedAccess("gems"), async (req
     return res.status(404).json({ message: "Khong tim thay gem" });
   }
 
-  if (["admin", "staff", "sale"].includes(user.role)) {
-    logProtectedAccess("granted_staff", req, { slug: gem.slug, itemType: "gem" });
+  const hasAccess = ["admin", "staff", "sale"].includes(user.role) || (user.isPremium && (!user.premiumExpiresAt || new Date(user.premiumExpiresAt) > new Date()));
+
+  if (hasAccess) {
+    logProtectedAccess("granted_staff_or_premium", req, { slug: gem.slug, itemType: "gem" });
     return res.json({
       promptInstruction: gem.promptInstruction,
       promptContent: gem.promptContent
@@ -196,8 +198,10 @@ router.get("/purchases/ai-tools/:slug", rateLimitProtectedAccess("ai-tools"), as
     return res.status(404).json({ message: "Khong tim thay tool" });
   }
 
-  if (["admin", "staff", "sale"].includes(user.role)) {
-    logProtectedAccess("granted_staff", req, { slug: tool.slug, itemType: "ai_tool" });
+  const hasAccess = ["admin", "staff", "sale"].includes(user.role) || (user.isPremium && (!user.premiumExpiresAt || new Date(user.premiumExpiresAt) > new Date()));
+
+  if (hasAccess) {
+    logProtectedAccess("granted_staff_or_premium", req, { slug: tool.slug, itemType: "ai_tool" });
     return res.json({ accountInfo: tool.accountInfo });
   }
 

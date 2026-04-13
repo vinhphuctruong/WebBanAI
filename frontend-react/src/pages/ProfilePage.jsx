@@ -60,6 +60,15 @@ export default function ProfilePage() {
       <article className="card form">
         <p><strong>Email:</strong> {profile?.email || user.email}</p>
         <p><strong>Vai trò:</strong> {profile?.role || user.role}</p>
+        {profile?.isPremium && profile?.premiumExpiresAt && (
+          <div style={{ background: "rgba(255, 193, 7, 0.2)", padding: "10px", borderRadius: "8px", margin: "10px 0", border: "1px solid #b8860b" }}>
+            <p style={{ margin: 0, color: "#b8860b" }}>
+              <strong>👑 Tài khoản Premium</strong>
+              <br/>
+              Có hiệu lực đến: {new Date(profile.premiumExpiresAt).toLocaleDateString("vi-VN")}
+            </p>
+          </div>
+        )}
         <label>Số điện thoại</label>
         <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Nhập số điện thoại" />
         <button className="btn btn-primary" onClick={savePhone}>Lưu số điện thoại</button>
