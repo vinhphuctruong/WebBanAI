@@ -55,13 +55,28 @@ jobs:
 
       - name: Add known hosts
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
           PORT="${VPS_PORT:-22}"
+          touch ~/.ssh/known_hosts
+
+          # Remove stale keys first (common after VPS rebuild/recreate)
+          ssh-keygen -R "[$VPS_HOST]:$PORT" -f ~/.ssh/known_hosts >/dev/null 2>&1 || true
+          ssh-keygen -R "$VPS_HOST" -f ~/.ssh/known_hosts >/dev/null 2>&1 || true
+
+          # Always trust current host key from the live VPS for this run.
+          SCANNED_KEYS="$(ssh-keyscan -p "$PORT" -H "$VPS_HOST" 2>/dev/null || true)"
+          test -n "$SCANNED_KEYS" || (echo "Unable to fetch host key from $VPS_HOST:$PORT" && exit 1)
+          printf '%s\n' "$SCANNED_KEYS" >> ~/.ssh/known_hosts
+
+          # Optional extra keys (e.g. github.com) from secrets
           if [ -n "$VPS_SSH_KNOWN_HOSTS" ]; then
-            echo "$VPS_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          else
-            ssh-keyscan -p "$PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
+            printf '%s\n' "$VPS_SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
           fi
+
+          sort -u ~/.ssh/known_hosts -o ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
       - name: Deploy over SSH
         run: |
@@ -78,8 +93,9 @@ jobs:
             BRANCH="main"
           fi
 
-          ssh -p "$PORT" "$VPS_USER@$VPS_HOST" "APP_DIR='$APP_DIR' BRANCH='$BRANCH' REPO_URL='$VPS_REPO_URL' ENV_B64='$ENV_B64' bash -s" <<'REMOTE_SCRIPT'
+          ssh -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts -p "$PORT" "$VPS_USER@$VPS_HOST" "APP_DIR='$APP_DIR' BRANCH='$BRANCH' REPO_URL='$VPS_REPO_URL' ENV_B64='$ENV_B64' bash -s" <<'REMOTE_SCRIPT'
           set -euo pipefail
+          export GIT_TERMINAL_PROMPT=0
 
           APP_DIR="${APP_DIR:-/opt/tm-software-ai}"
           BRANCH="${BRANCH:-main}"
