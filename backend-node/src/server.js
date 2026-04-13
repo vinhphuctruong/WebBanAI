@@ -1,9 +1,8 @@
-﻿import app from "./app.js";
+import app from "./app.js";
 import { env } from "./config/env.js";
 import { pgPool } from "./config/postgres.js";
 import { connectMongo } from "./config/mongo.js";
 import { initPostgres } from "./db/initPostgres.js";
-import { seedContent } from "./seed/seedContent.js";
 
 async function retry(label, fn, options = {}) {
   const retries = options.retries ?? 20;
@@ -30,7 +29,6 @@ async function retry(label, fn, options = {}) {
 async function bootstrap() {
   await retry("MongoDB", connectMongo, { retries: 30, delayMs: 2000 });
   await retry("PostgreSQL", initPostgres, { retries: 30, delayMs: 2000 });
-  await seedContent();
 
   app.listen(env.port, () => {
     console.log(`Node backend running at http://localhost:${env.port}`);
