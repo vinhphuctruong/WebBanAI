@@ -64,6 +64,8 @@ services:
       MOMO_IPN_URL: ${MOMO_IPN_URL:-}
       APP_BASE_URL: ${APP_BASE_URL:-}
       API_BASE_URL: ${API_BASE_URL:-}
+    volumes:
+      - backend_uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -112,5 +114,6 @@ services:
 volumes:
   pg_node_data:
   mongo_node_data:
+  backend_uploads:
   certbot_www:
   certbot_conf:
