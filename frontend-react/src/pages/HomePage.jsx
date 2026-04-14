@@ -312,7 +312,7 @@ export default function HomePage() {
               <h1>AI hỗ trợ làm <span className="mlv-accent">video bán hàng</span> tốt nhất</h1>
               <p>Tạo tài khoản và dùng thử ngay công cụ AI tạo video marketing chuyên nghiệp, nhanh chóng.</p>
               <a
-                href="https://khoahocbigman.com/go/freetest"
+                href="https://veo3.ai"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mlv-hero-cta"
