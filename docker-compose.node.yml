@@ -63,6 +63,10 @@
         NEXT_PUBLIC_API_BASE: http://localhost:8080/api
         API_BASE_INTERNAL: http://backend:8080/api
         NEXT_PUBLIC_SITE_URL: http://localhost:5173
+    environment:
+      NEXT_PUBLIC_API_BASE: http://localhost:8080/api
+      API_BASE_INTERNAL: http://backend:8080/api
+      NEXT_PUBLIC_SITE_URL: http://localhost:5173
     restart: unless-stopped
     ports:
       - "5173:80"

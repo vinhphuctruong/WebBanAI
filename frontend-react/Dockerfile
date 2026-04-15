@@ -19,6 +19,12 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=80
+ARG NEXT_PUBLIC_API_BASE=http://localhost:8080/api
+ARG API_BASE_INTERNAL=http://localhost:8080/api
+ARG NEXT_PUBLIC_SITE_URL=http://localhost:5173
+ENV NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE}
+ENV API_BASE_INTERNAL=${API_BASE_INTERNAL}
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public

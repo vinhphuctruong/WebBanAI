@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import GemDetailPage from "../../../src/views/GemDetailPage.jsx";
 import { fetchPublicJson } from "../../../src/lib/serverApi.js";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 function makeDescription(gem) {
@@ -38,6 +39,6 @@ export default async function Page({ params }) {
     if (err?.status === 404) {
       notFound();
     }
-    return <GemDetailPage initialError="Không tải được thông tin prompt." />;
+    return <GemDetailPage />;
   }
 }

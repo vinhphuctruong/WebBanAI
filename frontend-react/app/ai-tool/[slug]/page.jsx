@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import ToolDetailPage from "../../../src/views/ToolDetailPage.jsx";
 import { fetchPublicJson } from "../../../src/lib/serverApi.js";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 function makeDescription(tool) {
@@ -38,6 +39,6 @@ export default async function Page({ params }) {
     if (err?.status === 404) {
       notFound();
     }
-    return <ToolDetailPage initialError="Không tải được thông tin AI Tool." />;
+    return <ToolDetailPage />;
   }
 }

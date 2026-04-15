@@ -1,6 +1,7 @@
 import PricingPage from "../../src/views/PricingPage.jsx";
 import { fetchPublicJson } from "../../src/lib/serverApi.js";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 export const metadata = {
@@ -13,6 +14,6 @@ export default async function Page() {
     const pricing = await fetchPublicJson("/catalog/pricing", { revalidate });
     return <PricingPage initialPricing={pricing} />;
   } catch (_err) {
-    return <PricingPage initialError="Không tải được bảng giá." />;
+    return <PricingPage />;
   }
 }

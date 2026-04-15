@@ -86,6 +86,10 @@ services:
         NEXT_PUBLIC_API_BASE: /api
         API_BASE_INTERNAL: http://backend:8080/api
         NEXT_PUBLIC_SITE_URL: ${APP_BASE_URL:-https://aivideo.vinhphucdev.id.vn}
+    environment:
+      NEXT_PUBLIC_API_BASE: /api
+      API_BASE_INTERNAL: http://backend:8080/api
+      NEXT_PUBLIC_SITE_URL: ${APP_BASE_URL:-https://aivideo.vinhphucdev.id.vn}
     restart: unless-stopped
     depends_on:
       - backend

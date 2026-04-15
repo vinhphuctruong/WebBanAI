@@ -1,6 +1,7 @@
 import GemsPage from "../../src/views/GemsPage.jsx";
 import { fetchPublicJson } from "../../src/lib/serverApi.js";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 120;
 
 export const metadata = {
@@ -13,6 +14,6 @@ export default async function Page() {
     const items = await fetchPublicJson("/catalog/gems", { revalidate });
     return <GemsPage initialItems={items} />;
   } catch (_err) {
-    return <GemsPage initialError="Không tải được danh sách prompt." />;
+    return <GemsPage />;
   }
 }

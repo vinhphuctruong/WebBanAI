@@ -1,6 +1,7 @@
 import HomePage from "../src/views/HomePage.jsx";
 import { fetchPublicJson } from "../src/lib/serverApi.js";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 120;
 
 export const metadata = {
@@ -18,6 +19,6 @@ export default async function Page() {
 
     return <HomePage initialData={{ gems, tools, reviews }} />;
   } catch (_err) {
-    return <HomePage initialError="Không tải được dữ liệu trang chủ." />;
+    return <HomePage />;
   }
 }

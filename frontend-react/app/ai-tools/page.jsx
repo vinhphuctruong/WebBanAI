@@ -1,6 +1,7 @@
 import ToolsPage from "../../src/views/ToolsPage.jsx";
 import { fetchPublicJson } from "../../src/lib/serverApi.js";
 
+export const dynamic = "force-dynamic";
 export const revalidate = 120;
 
 export const metadata = {
@@ -13,6 +14,6 @@ export default async function Page() {
     const items = await fetchPublicJson("/catalog/ai-tools", { revalidate });
     return <ToolsPage initialItems={items} />;
   } catch (_err) {
-    return <ToolsPage initialError="Không tải được danh sách AI Tool." />;
+    return <ToolsPage />;
   }
 }
