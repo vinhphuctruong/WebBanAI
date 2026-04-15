@@ -54,6 +54,7 @@ function gemToForm(gem) {
     originalPrice: String(gem.originalPrice ?? ""),
     description: gem.description || "",
     imageUrl: gem.thumbnail || "",
+    videoUrl: gem.videoUrl || "",
     tutorialVideo: gem.tutorialVideo || "",
     stock: "",
     features: "",
@@ -335,6 +336,7 @@ export default function AdminPage() {
           thumbnail: String(productForm.imageUrl || ""),
           gallery: productForm.imageUrl ? [String(productForm.imageUrl)] : [],
           productType: String(productForm.productType || "chatbot_prompt"),
+          videoUrl: String(productForm.videoUrl || ""),
           tutorialVideo: String(productForm.tutorialVideo || ""),
           promptInstruction: String(productForm.promptInstruction || ""),
           promptContent: String(productForm.promptContent || "")
@@ -500,11 +502,22 @@ export default function AdminPage() {
 
           {isGem && (
             <label className="admin-span-all">
+              Link Video Demo / Giới Thiệu Sản Phẩm (YouTube)
+              <input
+                value={productForm.videoUrl}
+                onChange={(event) => updateProductField("videoUrl", event.target.value)}
+                placeholder="https://www.youtube.com/watch?v=... (video demo cho card/trang chi tiết)"
+              />
+            </label>
+          )}
+
+          {isGem && (
+            <label className="admin-span-all">
               Link Video Hướng Dẫn (YouTube)
               <input
                 value={productForm.tutorialVideo}
                 onChange={(event) => updateProductField("tutorialVideo", event.target.value)}
-                placeholder="https://www.youtube.com/watch?v=..."
+                placeholder="https://www.youtube.com/watch?v=... (video hướng dẫn sử dụng)"
               />
             </label>
           )}

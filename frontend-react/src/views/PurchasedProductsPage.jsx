@@ -42,7 +42,7 @@ function extractPublicProduct(itemType, fallbackTitle, payload) {
       title: payload.title || fallbackTitle || "Prompt",
       description: payload.description || "",
       image: payload.thumbnail || "/tm-aivideo-logo.jpg",
-      videoUrl: payload.tutorialVideo || ""
+      videoUrl: payload.videoUrl || payload.tutorialVideo || ""
     };
   }
 

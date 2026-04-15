@@ -245,7 +245,7 @@ export default function HomePage({ initialData = null, initialError = "" }) {
       soldCount: Number(gem.soldCount || 0),
       link: `/chatbotprompt/${gem.slug}`,
       isNew: gem.isNew || false,
-      videoUrl: gem.tutorialVideo || "",
+      videoUrl: gem.videoUrl || gem.tutorialVideo || "",
     })),
     [data.gems]
   );

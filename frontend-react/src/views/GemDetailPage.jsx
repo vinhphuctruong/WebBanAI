@@ -123,6 +123,8 @@ export default function GemDetailPage({ initialGem = null, initialError = "" }) 
   if (error) return <p className="error">{error}</p>;
   if (!gem) return <p>Đang tải...</p>;
   const isPaidGem = Number(gem.price || 0) > 0;
+  const hasDemoVideo = Boolean(getYouTubeId(gem.videoUrl));
+  const hasTutorialVideo = Boolean(getYouTubeId(gem.tutorialVideo));
   const canViewTutorialVideo = !isPaidGem || Boolean(purchasedContent);
 
   function copyPrompt() {
@@ -142,7 +144,15 @@ export default function GemDetailPage({ initialGem = null, initialError = "" }) 
           <h1>{gem.title}</h1>
           <p>{gem.description}</p>
 
-          {gem.tutorialVideo && canViewTutorialVideo && (
+          {hasDemoVideo && (
+            <YouTubePlayer
+              url={gem.videoUrl}
+              label="📹 Video Demo Sản Phẩm"
+              accentColor="#ef9b61"
+            />
+          )}
+
+          {hasTutorialVideo && canViewTutorialVideo && (
             <YouTubePlayer
               url={gem.tutorialVideo}
               label="🎓 Video Hướng Dẫn Sử Dụng"
@@ -150,7 +160,7 @@ export default function GemDetailPage({ initialGem = null, initialError = "" }) 
             />
           )}
 
-          {gem.tutorialVideo && !canViewTutorialVideo && (
+          {hasTutorialVideo && !canViewTutorialVideo && (
             <div style={{ marginTop: "1rem", padding: "1rem", background: "rgba(19, 62, 149, 0.1)", border: "1px dashed var(--brand)", borderRadius: "10px" }}>
               <p><strong>Video hướng dẫn đã bị khóa.</strong></p>
               <p>Vui lòng mua sản phẩm để mở khóa video hướng dẫn sử dụng.</p>

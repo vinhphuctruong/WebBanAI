@@ -166,7 +166,8 @@ router.post("/catalog/gems", async (req, res) => {
       productType: String(req.body?.productType || "chatbot_prompt"),
       chatbotLink: String(req.body?.chatbotLink || ""),
       workflowLink: String(req.body?.workflowLink || ""),
-      tutorialVideo: String(req.body?.tutorialVideo || ""),
+      videoUrl: String(req.body?.videoUrl || "").trim(),
+      tutorialVideo: String(req.body?.tutorialVideo || "").trim(),
       tutorialSteps: Array.isArray(req.body?.tutorialSteps) ? req.body.tutorialSteps : [],
       linkedAiToolId: String(req.body?.linkedAiToolId || ""),
       promptInstruction,
@@ -305,6 +306,14 @@ router.put("/catalog/gems/:slug", async (req, res) => {
 
     if (req.body?.productType !== undefined) {
       updates.productType = String(req.body.productType || "").trim();
+    }
+
+    if (req.body?.videoUrl !== undefined) {
+      updates.videoUrl = String(req.body.videoUrl || "").trim();
+    }
+
+    if (req.body?.tutorialVideo !== undefined) {
+      updates.tutorialVideo = String(req.body.tutorialVideo || "").trim();
     }
 
     if (req.body?.promptInstruction !== undefined) {

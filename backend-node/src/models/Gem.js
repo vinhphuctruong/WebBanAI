@@ -23,6 +23,7 @@ const gemSchema = new mongoose.Schema(
     productType: String,
     chatbotLink: String,
     workflowLink: String,
+    videoUrl: String,
     tutorialVideo: String,
     tutorialSteps: [tutorialStepSchema],
     linkedAiToolId: String,
