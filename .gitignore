@@ -4,6 +4,8 @@ node_modules/
 
 # Build outputs
 frontend-react/dist/
+frontend-react/.next/
+frontend-react/.npm-cache/
 
 # Env
 .env

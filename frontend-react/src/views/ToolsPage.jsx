@@ -1,5 +1,7 @@
+"use client";
+
 import { useEffect, useMemo, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink } from "../lib/router.jsx";
 import { api, money } from "../lib/api.js";
 
 function categoryLabel(value) {
@@ -32,16 +34,17 @@ function discountPercent(currentPrice, originalPrice) {
   return Math.round(((original - current) / original) * 100);
 }
 
-export default function ToolsPage() {
-  const [items, setItems] = useState([]);
-  const [error, setError] = useState("");
+export default function ToolsPage({ initialItems = null, initialError = "" }) {
+  const [items, setItems] = useState(initialItems || []);
+  const [error, setError] = useState(initialError);
   const [activeCategory, setActiveCategory] = useState("all");
   const [sortMode, setSortMode] = useState("popular");
   const [query, setQuery] = useState("");
 
   useEffect(() => {
+    if (initialItems) return;
     api("/catalog/ai-tools").then(setItems).catch((err) => setError(err.message));
-  }, []);
+  }, [initialItems]);
 
   const categories = useMemo(() => {
     return ["all", ...new Set(items.map((tool) => tool.category).filter(Boolean))];
@@ -191,3 +194,4 @@ export default function ToolsPage() {
     </div>
   );
 }
+

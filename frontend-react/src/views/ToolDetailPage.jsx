@@ -1,5 +1,7 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "../lib/router.jsx";
 import { api, money } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
@@ -78,28 +80,42 @@ function YouTubePlayer({ url, label, accentColor }) {
   );
 }
 
-export default function ToolDetailPage() {
+export default function ToolDetailPage({ initialTool = null, initialError = "" }) {
   const { slug } = useParams();
   const { user } = useAuth();
-  const [tool, setTool] = useState(null);
+  const [tool, setTool] = useState(initialTool);
   const [purchasedInfo, setPurchasedInfo] = useState(null);
-  const [showAccount, setShowAccount] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(initialError);
 
   useEffect(() => {
-    api(`/catalog/ai-tools/${slug}`)
-      .then((res) => {
-        setTool(res);
-        if (Number(res.accountPrice || 0) === 0) {
-          setPurchasedInfo({ accountInfo: res.accountInfo });
-        } else if (user) {
-          api(`/profile/purchases/ai-tools/${slug}`)
-            .then((info) => setPurchasedInfo(info))
-            .catch(() => setPurchasedInfo(null));
+    async function loadToolDetail() {
+      try {
+        const payload = initialTool || await api(`/catalog/ai-tools/${slug}`);
+        setTool(payload);
+
+        if (Number(payload.accountPrice || 0) === 0) {
+          setPurchasedInfo({ accountInfo: payload.accountInfo });
+          return;
         }
-      })
-      .catch((err) => setError(err.message));
-  }, [slug, user]);
+
+        if (!user) {
+          setPurchasedInfo(null);
+          return;
+        }
+
+        try {
+          const info = await api(`/profile/purchases/ai-tools/${slug}`);
+          setPurchasedInfo(info);
+        } catch (_err) {
+          setPurchasedInfo(null);
+        }
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+
+    loadToolDetail();
+  }, [initialTool, slug, user]);
 
   if (error) return <p className="error">{error}</p>;
   if (!tool) return <p>Đang tải...</p>;
@@ -243,3 +259,4 @@ export default function ToolDetailPage() {
     </section>
   );
 }
+

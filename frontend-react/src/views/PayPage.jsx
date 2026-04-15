@@ -1,5 +1,7 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { Navigate, useParams, Link } from "react-router-dom";
+import { Navigate, useParams, Link } from "../lib/router.jsx";
 import { api, money } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
@@ -337,3 +339,4 @@ export default function PayPage() {
     </section>
   );
 }
+

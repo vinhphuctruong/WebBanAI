@@ -1,5 +1,7 @@
+"use client";
+
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "../lib/router.jsx";
 import { api, money } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
@@ -202,22 +204,24 @@ function FreePromptCard({ item }) {
 }
 
 /* ─── Main Page ──────────────────────────────────────────── */
-export default function HomePage() {
+export default function HomePage({ initialData = null, initialError = "" }) {
   const { user } = useAuth();
   const saleDeadlineRef = useRef(Date.now() + SALE_DURATION_MS);
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({ gems: [], tools: [], reviews: [] });
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(!initialData);
+  const [data, setData] = useState(initialData || { gems: [], tools: [], reviews: [] });
+  const [error, setError] = useState(initialError);
   const [query, setQuery] = useState("");
   const [activeGemCategory, setActiveGemCategory] = useState("all");
   const [countdown, setCountdown] = useState(() => toCountdown(saleDeadlineRef.current));
 
   useEffect(() => {
+    if (initialData) return;
+
     Promise.all([api("/catalog/gems"), api("/catalog/ai-tools"), api("/catalog/reviews")])
       .then(([gems, tools, reviews]) => setData({ gems, tools, reviews }))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialData]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setCountdown(toCountdown(saleDeadlineRef.current)), 1000);
@@ -478,3 +482,4 @@ export default function HomePage() {
     </>
   );
 }
+

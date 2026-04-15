@@ -1,5 +1,7 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link } from "../lib/router.jsx";
 import { api, money } from "../lib/api.js";
 
 export default function PayResultPage() {
@@ -129,3 +131,4 @@ export default function PayResultPage() {
     </section>
   );
 }
+

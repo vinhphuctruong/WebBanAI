@@ -1,5 +1,7 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { Navigate, Link } from "react-router-dom";
+import { Navigate, Link } from "../lib/router.jsx";
 import { api } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
@@ -307,3 +309,4 @@ export default function PurchasedProductsPage() {
     </section>
   );
 }
+

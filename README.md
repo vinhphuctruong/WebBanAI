@@ -1,10 +1,10 @@
-﻿# Mau Lam Video - Node.js + PostgreSQL + MongoDB + React
+# Mau Lam Video - Node.js + PostgreSQL + MongoDB + Next.js
 
 Project da duoc chuyen sang stack moi:
 - Backend: `backend-node` (Node.js + Express)
 - User/Auth/Order/Payment: PostgreSQL
 - Content/Catalog: MongoDB
-- Frontend: `frontend-react` (React + Vite)
+- Frontend: `frontend-react` (Next.js App Router)
 
 ## Kien truc du lieu
 
@@ -29,7 +29,7 @@ docker compose -f docker-compose.node.yml up --build
 ```
 
 - Backend API: `http://localhost:8080/api`
-- Frontend React: `http://localhost:5173`
+- Frontend Next.js: `http://localhost:5173`
 
 ## Chay local tung service
 
@@ -48,7 +48,7 @@ npm install
 npm run dev
 ```
 
-### 3) Chay frontend React
+### 3) Chay frontend Next.js
 
 ```bash
 cd frontend-react
@@ -90,4 +90,4 @@ Cau hinh trong `backend-node/.env`:
 
 ## Ghi chu
 
-- Stack moi duoc uu tien de phat trien tiep.
+- Frontend da duoc migration sang Next.js de ho tro SEO tot hon.

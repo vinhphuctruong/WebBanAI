@@ -1,5 +1,7 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams } from "../lib/router.jsx";
 import { api, money } from "../lib/api.js";
 import { useAuth } from "../lib/auth.jsx";
 
@@ -77,31 +79,46 @@ function YouTubePlayer({ url, label, accentColor }) {
   );
 }
 
-export default function GemDetailPage() {
+export default function GemDetailPage({ initialGem = null, initialError = "" }) {
   const { slug } = useParams();
   const { user } = useAuth();
-  const [gem, setGem] = useState(null);
-  const [error, setError] = useState("");
+  const [gem, setGem] = useState(initialGem);
+  const [error, setError] = useState(initialError);
   const [purchasedContent, setPurchasedContent] = useState(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    api(`/catalog/gems/${slug}`)
-      .then((res) => {
-        setGem(res);
-        if (res.price === 0) {
+    async function loadGemDetail() {
+      try {
+        const payload = initialGem || await api(`/catalog/gems/${slug}`);
+        setGem(payload);
+
+        if (Number(payload.price || 0) === 0) {
           setPurchasedContent({
-            promptInstruction: res.promptInstruction,
-            promptContent: res.promptContent
+            promptInstruction: payload.promptInstruction,
+            promptContent: payload.promptContent
           });
-        } else if (res.price > 0 && user) {
-          api(`/profile/purchases/gems/${slug}`)
-            .then((content) => setPurchasedContent(content))
-            .catch(() => setPurchasedContent(null));
+          return;
         }
-      })
-      .catch((err) => setError(err.message));
-  }, [slug, user]);
+
+        if (!user) {
+          setPurchasedContent(null);
+          return;
+        }
+
+        try {
+          const content = await api(`/profile/purchases/gems/${slug}`);
+          setPurchasedContent(content);
+        } catch (_err) {
+          setPurchasedContent(null);
+        }
+      } catch (err) {
+        setError(err.message);
+      }
+    }
+
+    loadGemDetail();
+  }, [initialGem, slug, user]);
 
   if (error) return <p className="error">{error}</p>;
   if (!gem) return <p>Đang tải...</p>;
@@ -186,3 +203,4 @@ export default function GemDetailPage() {
     </section>
   );
 }
+

@@ -1,7 +1,12 @@
-export const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080/api";
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+
+function readToken() {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem("mlv_token") || "";
+}
 
 export async function api(path, options = {}) {
-  const token = localStorage.getItem("mlv_token") || "";
+  const token = readToken();
   const headers = {
     "Content-Type": "application/json",
     ...(options.headers || {})
@@ -24,8 +29,9 @@ export async function api(path, options = {}) {
 }
 
 export async function apiUpload(path, formData) {
-  const token = localStorage.getItem("mlv_token") || "";
+  const token = readToken();
   const headers = {};
+
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }

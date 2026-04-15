@@ -1,14 +1,17 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "../lib/router.jsx";
 import { api, money } from "../lib/api.js";
 
-export default function PricingPage() {
-  const [pricing, setPricing] = useState(null);
-  const [error, setError] = useState("");
+export default function PricingPage({ initialPricing = null, initialError = "" }) {
+  const [pricing, setPricing] = useState(initialPricing);
+  const [error, setError] = useState(initialError);
 
   useEffect(() => {
+    if (initialPricing) return;
     api("/catalog/pricing").then(setPricing).catch((err) => setError(err.message));
-  }, []);
+  }, [initialPricing]);
 
   if (error) return <p className="error">{error}</p>;
   if (!pricing) return <p>Đang tải...</p>;
@@ -54,3 +57,4 @@ export default function PricingPage() {
     </section>
   );
 }
+

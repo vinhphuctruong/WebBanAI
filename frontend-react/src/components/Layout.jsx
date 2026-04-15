@@ -1,5 +1,7 @@
+"use client";
+
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "../lib/router.jsx";
 import { useAuth } from "../lib/auth.jsx";
 
 const headerLinks = [
@@ -208,3 +210,4 @@ export default function Layout({ children }) {
     </div>
   );
 }
+
