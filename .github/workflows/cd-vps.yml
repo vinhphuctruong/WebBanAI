@@ -111,8 +111,13 @@ jobs:
 
           cd "$APP_DIR"
 
+          # Ensure deployment repo is clean before switching/updating branch.
+          # This prevents failures like:
+          # "Your local changes ... would be overwritten by checkout".
+          git reset --hard
           git fetch --all --prune
           git checkout -B "$BRANCH" "origin/$BRANCH"
+          git reset --hard "origin/$BRANCH"
 
           if ! command -v docker >/dev/null 2>&1; then
             echo "Docker is not installed on VPS"
