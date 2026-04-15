@@ -11,7 +11,7 @@ Internet ──▶ Port 80/443 ──▶ Nginx Proxy (container)
                                   │
                        ┌──────────┴──────────┐
                        │                     │
-                 Frontend:3000         Backend:8080
+                 Frontend:80           Backend:8080
                  (container)           (container)
                                           │
                               ┌───────────┴───────────┐

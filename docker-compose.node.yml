@@ -65,7 +65,7 @@
         NEXT_PUBLIC_SITE_URL: http://localhost:5173
     restart: unless-stopped
     ports:
-      - "5173:3000"
+      - "5173:80"
     depends_on:
       - backend
 
